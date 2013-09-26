@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{041B7F5D-2FED-4672-A18B-ECB72B6C1860}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Fudp</RootNamespace>
+    <AssemblyName>Fudp</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CanProgCreateException.cs" />
+    <Compile Include="CanProgException.cs" />
+    <Compile Include="CanProgLimitConnectExcepion.cs" />
+    <Compile Include="CanProgOld.cs" />
+    <Compile Include="CanProgReadException.cs" />
+    <Compile Include="CanVirtPort.cs" />
+    <Compile Include="DevFileInfo.cs" />
+    <Compile Include="DevId.cs" />
+    <Compile Include="ParamRmAck.cs" />
+    <Compile Include="ParamRmRq.cs" />
+    <Compile Include="ParamSetAck.cs" />
+    <Compile Include="ParamSetRq.cs" />
+    <Compile Include="ProgCreateAck.cs" />
+    <Compile Include="ProgMrProperAck.cs" />
+    <Compile Include="ProgCreate.cs" />
+    <Compile Include="ProgList.cs" />
+    <Compile Include="ProgMrPropper.cs" />
+    <Compile Include="ProgRead.cs" />
+    <Compile Include="ProgRm.cs" />
+    <Compile Include="ProgInit.cs" />
+    <Compile Include="Message.cs" />
+    <Compile Include="ProgListRq.cs" />
+    <Compile Include="ProgReadRq.cs" />
+    <Compile Include="ProgRmAck.cs" />
+    <Compile Include="ProgStatus.cs" />
+    <Compile Include="ProgWrite.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CanProg.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Can\AppiDrvWinusb\AppiDrvWinusb.csproj">
+      <Project>{758C61BC-7BE1-4E25-BE05-3A17619199EE}</Project>
+      <Name>AppiDrvWinusb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Can\AppiWorking\AppiWorking.csproj">
+      <Project>{5A812723-E98B-4B82-AE7B-8E2747D8541F}</Project>
+      <Name>AppiWorking</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Can\Communications\Communications.csproj">
+      <Project>{6C5B1ECA-5187-4F63-8CF1-C17DF50D0F65}</Project>
+      <Name>Communications</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Can\IsoTP\IsoTP.csproj">
+      <Project>{A45417B6-4547-4E98-B69E-4CB1CFE45F61}</Project>
+      <Name>IsoTP</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
