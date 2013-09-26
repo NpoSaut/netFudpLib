@@ -3,22 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Fudp
+namespace Fudp.Messages
 {
     /// <summary>
-    /// Подтверждение содания или изменения записи в словаре свойств
+    /// Подтверждение удаления параметра из словаря
     /// </summary>
-    class ParamSetAck : Message
+    class ParamRmAck : Message
     {
-        
-        public ParamSetAck()
+        public ParamRmAck()
         { }
 
         private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
         {
-            {0, "Значение свойств запиано успешно"},
-            {1, "Свойство \"только для чтения\""},
-            {2, "Первышено максимальное количество свойств"}
+            {0, "Парамтр удален успешно"},
+            {1, "Парметр \"только для чтения\""},
+            {2, "Параметр не найден"}
         };
         public Dictionary<int, string> ErrorMsg
         {
@@ -36,7 +35,7 @@ namespace Fudp
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
-            buff[0] = 0x10;
+            buff[0] = 0x12;
             buff[1] = (byte)errorCode;
             return buff;
         }

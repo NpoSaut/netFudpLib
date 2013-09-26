@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Fudp
+namespace Fudp.Messages
 {
     /// <summary>
     /// Команда на содание или изменение записи в словаре свойств

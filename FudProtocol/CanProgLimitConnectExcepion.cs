@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Fudp
 {
-    class CanProgLimitConnectException : Exception
+    class CanProgLimitConnectException : CanProgException
     {
         public CanProgLimitConnectException()
             : base()

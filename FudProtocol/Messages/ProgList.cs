@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Fudp
+namespace Fudp.Messages
 {
     class ProgList : Message
     {

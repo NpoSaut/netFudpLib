@@ -49,34 +49,29 @@
     <Compile Include="CanProgCreateException.cs" />
     <Compile Include="CanProgException.cs" />
     <Compile Include="CanProgLimitConnectExcepion.cs" />
-    <Compile Include="CanProgOld.cs" />
     <Compile Include="CanProgReadException.cs" />
-    <Compile Include="CanVirtPort.cs" />
     <Compile Include="DevFileInfo.cs" />
     <Compile Include="DevId.cs" />
-    <Compile Include="ParamRmAck.cs" />
-    <Compile Include="ParamRmRq.cs" />
-    <Compile Include="ParamSetAck.cs" />
-    <Compile Include="ParamSetRq.cs" />
-    <Compile Include="ProgCreateAck.cs" />
-    <Compile Include="ProgMrProperAck.cs" />
-    <Compile Include="ProgCreate.cs" />
-    <Compile Include="ProgList.cs" />
-    <Compile Include="ProgMrPropper.cs" />
-    <Compile Include="ProgRead.cs" />
-    <Compile Include="ProgRm.cs" />
-    <Compile Include="ProgInit.cs" />
-    <Compile Include="Message.cs" />
-    <Compile Include="ProgListRq.cs" />
-    <Compile Include="ProgReadRq.cs" />
-    <Compile Include="ProgRmAck.cs" />
-    <Compile Include="ProgStatus.cs" />
-    <Compile Include="ProgWrite.cs" />
+    <Compile Include="Messages\ParamRmAck.cs" />
+    <Compile Include="Messages\ParamRmRq.cs" />
+    <Compile Include="Messages\ParamSetAck.cs" />
+    <Compile Include="Messages\ParamSetRq.cs" />
+    <Compile Include="Messages\ProgCreateAck.cs" />
+    <Compile Include="Messages\ProgMrProperAck.cs" />
+    <Compile Include="Messages\ProgCreate.cs" />
+    <Compile Include="Messages\ProgList.cs" />
+    <Compile Include="Messages\ProgMrPropper.cs" />
+    <Compile Include="Messages\ProgRead.cs" />
+    <Compile Include="Messages\ProgRm.cs" />
+    <Compile Include="Messages\ProgInit.cs" />
+    <Compile Include="Messages\Message.cs" />
+    <Compile Include="Messages\ProgListRq.cs" />
+    <Compile Include="Messages\ProgReadRq.cs" />
+    <Compile Include="Messages\ProgRmAck.cs" />
+    <Compile Include="Messages\ProgStatus.cs" />
+    <Compile Include="Messages\ProgWrite.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CanProg.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Can\AppiDrvWinusb\AppiDrvWinusb.csproj">
@@ -95,6 +90,9 @@
       <Project>{A45417B6-4547-4E98-B69E-4CB1CFE45F61}</Project>
       <Name>IsoTP</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

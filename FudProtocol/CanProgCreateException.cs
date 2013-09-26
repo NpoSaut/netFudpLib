@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Fudp
 {
-    class CanProgCreateException : Exception
+    class CanProgCreateException : CanProgException
     {
         public CanProgCreateException()
             : base()

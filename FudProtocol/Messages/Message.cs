@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace Fudp
+namespace Fudp.Messages
 {
     public abstract class Message
     {

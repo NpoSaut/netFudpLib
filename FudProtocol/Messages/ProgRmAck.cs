@@ -3,46 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Fudp
+namespace Fudp.Messages
 {
-    class ProgCreateAck : Message
+    class ProgRmAck : Message
     {
-        private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
-        {
-            {0, "Файл создан успешно"},
-            {1, "Файл с таким именем уже существуе"},
-            {2, "Превышено максимальное количество файлов"},
-            {3, "Недостаточно памяти"},
-            {4, "Ошибка создания"}
-        };
-        public Dictionary<int, string> ErrorMsg
-        {
-            get { return errorMsg; }
-            set { ;}
-        }
+        public ProgRmAck()
+        { }
+
         /// <summary>
         /// Код ошибки
         /// </summary>
-        private int errorCode = 0;
+        private int errorCode;
         public int ErrorCode
         {
             get { return errorCode; }
             set { ;}
         }
+
         private Byte[] buff;
         public byte[] Buff
         {
             get { return buff; }
             set { ;}
         }
-        public ProgCreateAck()
-        {
-        }
 
         public override byte[] Encode()
         {
             buff = new byte[2];
-            buff[0] = 0x0a;
+            buff[0] = 0x08;
             buff[1] = (byte)errorCode;
             return buff;
         }
