@@ -7,6 +7,7 @@ using Communications.Appi;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
 using Fudp.Messages;
+using Fudp.Exceptions;
 
 namespace Fudp
 {
@@ -25,7 +26,6 @@ namespace Fudp
         public const int FuInit = 0xfc28;
         public const int FuProg = 0xfc48;
         public const int FuDev = 0xfc68;
-        private static bool b = true;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>
@@ -35,7 +35,7 @@ namespace Fudp
         /// </summary>
         public CanPort Port { get; private set; }
 
-        public DevId Device { get; private set; }
+        public DeviceTicket Device { get; private set; }
         /// <summary>
         /// Дескриптор
         /// </summary>
@@ -50,31 +50,9 @@ namespace Fudp
         /// <param name="d">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <param name="Data">Отправляемые данные</param>
-        private static void SendMsg(CanPort d, DevId device, Message msg, int TimeOut = 2000)
+        public static void SendMsg(CanPort d, Message msg, int TimeOut = 2000)
         {
-            if (CanProg.b)
-            {
-                try
-                {
-                    TpPacket sp = new TpPacket(msg.Encode());
-                    TpSendTransaction st = new TpSendTransaction(d, transmitDescriptior, acknowlegmentDescriptior);
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    //Console.WriteLine("Отправка: ");
-                    //Console.ForegroundColor = ConsoleColor.DarkRed;
-                    //Console.WriteLine(msg);
-                    //Console.ResetColor();
-                    st.Send(sp);
-                    //TpReceiveTransaction rt = IsoTp.SendRequestAndBeginReceive(d, transmitDescriptior, acknowlegmentDescriptior, Data, TimeSpan.FromMilliseconds(TimeOut));
-                    //return rt.Data;
-                    
-                }
-                catch(Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-            }
-            else
-                throw new IsoTpProtocolException();
+            IsoTp.BeginSend(d, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut)).Wait();
         }
         /// <summary>
         /// Получает ответ от устройства
@@ -82,7 +60,7 @@ namespace Fudp
         /// <param name="port">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns>Принятые данные</returns>
-        private static Byte[] GetMsg(CanPort port, DevId device, int TimeOut = 2000)
+        public static Byte[] GetMsg(CanPort port, DeviceTicket device, int TimeOut = 2000)
         {
             try
             {
@@ -106,20 +84,15 @@ namespace Fudp
         /// <param name="Port">Номер порта</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
-        public static CanProg Connect(CanPort Port, DevId device, int TransmitDescription, int AcknowlegmentDescription)
+        public static CanProg Connect(CanPort Port, DeviceTicket device, int TransmitDescriptor, int AcknowlegmentDescriptor)
         {
             CanProg CP = new CanProg(Port)
             {
                 Device = device
             };
-            CanProg.transmitDescriptior = TransmitDescription;
-            CanProg.acknowlegmentDescriptior = AcknowlegmentDescription;
-            ProgInit Init = new ProgInit()
-            {
-                IdSystem = device.IdSystem,
-                IdBlock = device.IdBlock,
-                ModificationOfBlock = device.ModificationOfBlock
-            };
+            CanProg.transmitDescriptior = TransmitDescriptor;
+            CanProg.acknowlegmentDescriptior = AcknowlegmentDescriptor;
+            ProgInit Init = new ProgInit(device);
             int i = 0;
             while(true)
             {
@@ -129,7 +102,7 @@ namespace Fudp
                     throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 }
                 
-                SendMsg(CP.Port, device, Init, 100);
+                SendMsg(CP.Port, Init, 100);
                 i++;
                 try
                 {
@@ -153,7 +126,7 @@ namespace Fudp
         public List<DevFileInfo> ListFiles()
         {
             ProgListRq ListRq = new ProgListRq();
-            SendMsg(Port, Device, ListRq);
+            SendMsg(Port, ListRq);
             return Message.Decode<ProgList>(GetMsg(Port, Device)).ListDevFileInfo;
         }
         /// <summary>
@@ -172,7 +145,7 @@ namespace Fudp
 
             while (ReadRq.FileSize > 0)
             {
-                SendMsg(Port, Device, ReadRq);
+                SendMsg(Port, ReadRq);
                 
                 ProgRead Read = Message.Decode<ProgRead>(GetMsg(Port, Device));
                 if (Read.ErrorCode != 0)
@@ -198,7 +171,7 @@ namespace Fudp
             {
                 FileName = FileName
             };
-            SendMsg(Port, Device, Rm);
+            SendMsg(Port, Rm);
 
             return Message.Decode<ProgRmAck>(GetMsg(Port, Device)).ErrorCode;
         }
@@ -208,7 +181,7 @@ namespace Fudp
         public void MrProper()
         {
             ProgMrPropper MrPropper = new ProgMrPropper();
-            SendMsg(Port, Device, MrPropper);
+            SendMsg(Port, MrPropper);
         }
         /// <summary>
         /// Команда на создание файла
@@ -225,7 +198,7 @@ namespace Fudp
                 CRC = fileInfo.CalcCrc()
             };
 
-            SendMsg(Port, Device, Create);
+            SendMsg(Port, Create);
             ProgCreateAck CreateAck = Message.Decode<ProgCreateAck>(GetMsg(Port, Device));
             if (CreateAck.ErrorCode != 0)
                 switch (CreateAck.ErrorCode)
@@ -251,7 +224,7 @@ namespace Fudp
                     Offset = offset
                 };
 
-                SendMsg(Port, Device, PWrite);
+                SendMsg(Port, PWrite);
 
                 Write(fileInfo,
                     PWrite.BuffSize >= ProgWrite.DataSize + PWrite.OverheadsBytes ?
@@ -271,7 +244,7 @@ namespace Fudp
                 ParamKey = paramKey,
                 ParamVlue = paramValue
             };
-            SendMsg(Port, Device, psr);
+            SendMsg(Port, psr);
             ParamSetAck psa = Message.Decode<ParamSetAck>(GetMsg(Port, Device));
             if (psa.ErrorCode == 0)
                 Console.WriteLine(psa.ErrorMsg[psa.ErrorCode]);
@@ -288,7 +261,7 @@ namespace Fudp
             {
                 ParamKey = paramKey
             };
-            SendMsg(Port, Device, prr);
+            SendMsg(Port, prr);
             ParamRmAck pra = Message.Decode<ParamRmAck>(GetMsg(Port, Device));
             if (pra.ErrorCode == 0)
                 Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
@@ -304,6 +277,5 @@ namespace Fudp
             b[1] = 0x0f;
             //SendMsg(port, device, b);
         }
-
     }
 }

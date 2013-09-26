@@ -46,12 +46,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CanProgCreateException.cs" />
-    <Compile Include="CanProgException.cs" />
-    <Compile Include="CanProgLimitConnectExcepion.cs" />
-    <Compile Include="CanProgReadException.cs" />
+    <Compile Include="DeviceLocator.cs" />
+    <Compile Include="Exceptions\CanProgCreateException.cs" />
+    <Compile Include="Exceptions\CanProgException.cs" />
+    <Compile Include="Exceptions\CanProgLimitConnectExcepion.cs" />
+    <Compile Include="Exceptions\CanProgReadException.cs" />
     <Compile Include="DevFileInfo.cs" />
-    <Compile Include="DevId.cs" />
+    <Compile Include="DeviceTicket.cs" />
     <Compile Include="Messages\ParamRmAck.cs" />
     <Compile Include="Messages\ParamRmRq.cs" />
     <Compile Include="Messages\ParamSetAck.cs" />
