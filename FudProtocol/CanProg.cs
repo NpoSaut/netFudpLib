@@ -52,7 +52,10 @@ namespace Fudp
         /// <param name="Data">Отправляемые данные</param>
         public static void SendMsg(CanPort d, Message msg, int TimeOut = 2000)
         {
-            IsoTp.BeginSend(d, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut)).Wait();
+            using (var flow = new CanFlow(d, transmitDescriptior, acknowlegmentDescriptior))
+            {
+                IsoTp.BeginSend(flow, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut)).Wait();
+            }
         }
         /// <summary>
         /// Получает ответ от устройства
@@ -64,9 +67,12 @@ namespace Fudp
         {
             try
             {
-                TpReceiveTransaction rt = new TpReceiveTransaction(port, acknowlegmentDescriptior, transmitDescriptior);
-                rt.Timeout = TimeSpan.FromMilliseconds(TimeOut);
-                return rt.Receive();
+                using (var flow = new CanFlow(port, transmitDescriptior, acknowlegmentDescriptior))
+                {
+                    TpReceiveTransaction rt = new TpReceiveTransaction(flow, acknowlegmentDescriptior, transmitDescriptior);
+                    rt.Timeout = TimeSpan.FromMilliseconds(TimeOut);
+                    return rt.Receive();
+                }
             }
             catch
             {
