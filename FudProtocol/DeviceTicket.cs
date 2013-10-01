@@ -5,7 +5,9 @@ using System.Text;
 
 namespace Fudp
 {
-
+    /// <summary>
+    /// Билет устройства - содержит идентефикационные данные устройства
+    /// </summary>
     public class DeviceTicket
     {
         /// <summary>ID системы</summary>
@@ -19,5 +21,55 @@ namespace Fudp
         /// <summary>Номер канала</summary>
         public int Channel { get; set; }
 
+        /// <summary>Создаёт билет устройства с параметрами по-умолчанию</summary>
+        public DeviceTicket()
+        { }
+        /// <summary>
+        /// Создаёт билет устройства с заданными параметрами
+        /// </summary>
+        /// <param name="SystemId">Id Системы</param>
+        /// <param name="BlockId">Id блока</param>
+        /// <param name="BlockSerialNumber">Серийный номер блока</param>
+        /// <param name="Module">Номер модуля</param>
+        /// <param name="Channel">Номер канала (полукомплекта), начиная с 1</param>
+        public DeviceTicket(
+            int SystemId,
+            int BlockId,
+            int BlockSerialNumber,
+            int Module,
+            int Channel)
+            : this()
+        {
+            this.SystemId = SystemId;
+            this.BlockId = BlockId;
+            this.BlockSerialNumber = BlockSerialNumber;
+            this.Module = Module;
+            this.Channel = Channel;
+        }
+        /// <summary>
+        /// Создаёт броадкаст-билет устройств с заданными параметрами
+        /// </summary>
+        /// <param name="SystemId">Id Системы</param>
+        /// <param name="BlockId">Id блока</param>
+        /// <param name="Module">Номер модуля</param>
+        /// <param name="Channel">Номер канала (полукомплекта), начиная с 1</param>
+        public DeviceTicket(
+            int SystemId,
+            int BlockId,
+            int Module,
+            int Channel)
+            : this(SystemId, BlockId, 0, Module, Channel)
+        { }
+
+        public override string ToString()
+        {
+            return
+                string.Format("{0}:{1}-{4:D5}/{3} [{2}]",
+                    SystemId,
+                    BlockId,
+                    Module,
+                    Channel,
+                    BlockSerialNumber);
+        }
     }
 }

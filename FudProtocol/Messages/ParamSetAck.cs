@@ -8,6 +8,7 @@ namespace Fudp.Messages
     /// <summary>
     /// Подтверждение содания или изменения записи в словаре свойств
     /// </summary>
+    [Identifer(0x10)]
     class ParamSetAck : Message
     {
         
@@ -36,7 +37,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
-            buff[0] = 0x10;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)errorCode;
             return buff;
         }

@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x09)]
     class ProgCreate :Message
     {
         private Byte[] buff;
@@ -61,7 +62,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new Byte[10 + fileName.Length];
-            buff[0] = 0x09;     //Идентификатор сообщения
+            buff[0] = MessageIdentifer;     //Идентификатор сообщения
             buff[1] = (byte)fileName.Length;
             Buffer.BlockCopy(Encoding.GetEncoding(1251).GetBytes(fileName), 0, buff, 2, fileName.Length);
             Buffer.BlockCopy(BitConverter.GetBytes(fileSize), 0, buff, 2 + fileName.Length, intSize);

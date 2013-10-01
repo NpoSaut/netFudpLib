@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x0b)]
     class ProgWrite : Message
     {
         public const int DataSize = 4000;
@@ -24,7 +25,6 @@ namespace Fudp.Messages
         public byte[] Buff
         {
             get { return buff; }
-            set { ;}
         }
         /// <summary>
         /// Данные для записи
@@ -72,7 +72,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new Byte[BuffSize];
-            buff[0] = 0x0b;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)fileName.Length;
             Buffer.BlockCopy(Encoding.GetEncoding(1251).GetBytes(fileName), 0, buff, 2, fileName.Length);
             Buffer.BlockCopy(BitConverter.GetBytes(offset), 0, buff, 2 + fileName.Length, intSize);

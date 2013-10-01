@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x0a)]
     class ProgCreateAck : Message
     {
         private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
@@ -42,7 +43,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new byte[2];
-            buff[0] = 0x0a;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)errorCode;
             return buff;
         }

@@ -8,6 +8,7 @@ namespace Fudp.Messages
     /// <summary>
     /// Подтверждение удаления параметра из словаря
     /// </summary>
+    [Identifer(0x12)]
     class ParamRmAck : Message
     {
         public ParamRmAck()
@@ -35,7 +36,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
-            buff[0] = 0x12;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)errorCode;
             return buff;
         }

@@ -5,9 +5,6 @@ using System.Text;
 
 namespace Fudp.Messages
 {
-    /// <summary>
-    /// Команда на содание или изменение записи в словаре свойств
-    /// </summary>
     public enum pKeys : int
     {
         Version = 1,
@@ -24,7 +21,11 @@ namespace Fudp.Messages
         LoaderVersion = 193,
         FileSystem = 192
     }
-
+    
+    /// <summary>
+    /// Команда на содание или изменение записи в словаре свойств
+    /// </summary>
+    [Identifer(0x0f)]
     class ParamSetRq : Message
     {
         private pKeys paramKey;
@@ -47,7 +48,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
-            buff[0] = 0x0f;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)paramKey;
             Buffer.BlockCopy(BitConverter.GetBytes(paramValue), 0, buff, 2, 4);
             return buff;

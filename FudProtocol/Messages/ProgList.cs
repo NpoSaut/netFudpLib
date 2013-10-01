@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x04)]
     class ProgList : Message
     {
         public ProgList()
@@ -29,7 +30,7 @@ namespace Fudp.Messages
         {            
             int disOffset = 1;
             buff = new byte[4000];
-            buff[0] = 0x04;
+            buff[0] = MessageIdentifer;
             for (int i = 0; i < listDevFileInfo.Count; i++)
             {
                 buff[i + disOffset] = (byte)listDevFileInfo[i].FileSize;

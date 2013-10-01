@@ -8,6 +8,7 @@ namespace Fudp.Messages
     /// <summary>
     /// Команда на удаление параметра из словаря свойств
     /// </summary>
+    [Identifer(0x11)]
     class ParamRmRq : Message
     {
         public ParamRmRq()

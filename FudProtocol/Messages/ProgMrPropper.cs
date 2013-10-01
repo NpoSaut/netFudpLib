@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x0d)]
     class ProgMrPropper : Message
     {
         private Byte[] buff;
@@ -25,7 +26,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new Byte[5];
-            buff[0] = 0x0d;     //Идентификатор сообщения
+            buff[0] = MessageIdentifer;     //Идентификатор сообщения
             buff[1] = 0x4e;     // /
             buff[2] = 0x8a;     // |
             buff[3] = 0x14;     // <  шифр безопасности

@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x06)]
     class ProgRead : Message
     {
         private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
@@ -61,7 +62,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new byte[readSize + 2];
-            buff[0] = 0x06;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)errorCode;
             Buffer.BlockCopy(readBuff, 0, buff, 2, readSize);
             return buff;

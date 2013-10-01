@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x05)]
     class ProgReadRq : Message
     {
         private Byte[] buff;
@@ -70,7 +71,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new Byte[10 + fileName.Length];
-            buff[0] = 0x05;     //Идентификатор сообщения
+            buff[0] = MessageIdentifer;     //Идентификатор сообщения
             buff[1] = (byte)fileName.Length;
             Buffer.BlockCopy(Encoding.GetEncoding(1251).GetBytes(fileName), 0, buff, 2, fileName.Length);
             Buffer.BlockCopy(BitConverter.GetBytes(offset), 0, buff, 2 + fileName.Length, intSize);

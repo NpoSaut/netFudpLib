@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x08)]
     class ProgRmAck : Message
     {
         public ProgRmAck()
@@ -30,7 +31,7 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             buff = new byte[2];
-            buff[0] = 0x08;
+            buff[0] = MessageIdentifer;
             buff[1] = (byte)errorCode;
             return buff;
         }

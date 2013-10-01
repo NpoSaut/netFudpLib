@@ -5,13 +5,14 @@ using System.Text;
 
 namespace Fudp.Messages
 {
+    [Identifer(0x0e)]
     class ProgMrProperAck : Message
     {
         public ProgMrProperAck()
         { }
         public override byte[] Encode()
         {
-            return BitConverter.GetBytes(0x0e);
+            return BitConverter.GetBytes(MessageIdentifer);
         }
         protected override void Decode(byte[] Data)
         {

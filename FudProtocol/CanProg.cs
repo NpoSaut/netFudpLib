@@ -17,15 +17,18 @@ namespace Fudp
     /// </summary>
     public class CanProg
     {
-        public CanProg(CanPort Port)
+        public CanProg(CanFlow Flow)
         {
-            this.Port = Port;
+            this.Flow = Flow;
             Properties = new Dictionary<int, int>();
         }
 
-        public const int FuInit = 0xfc28;
-        public const int FuProg = 0xfc48;
-        public const int FuDev = 0xfc68;
+        //public const int FuInit = 0xfc28;
+        //public const int FuProg = 0xfc48;
+        //public const int FuDev = 0xfc68;
+        public const int FuInit = 0x3008;
+        public const int FuProg = 0x3008;
+        public const int FuDev = 0x4008;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>
@@ -33,7 +36,7 @@ namespace Fudp
         /// <summary>
         /// Порт
         /// </summary>
-        public CanPort Port { get; private set; }
+        public CanFlow Flow { get; private set; }
 
         public DeviceTicket Device { get; private set; }
         /// <summary>
@@ -47,52 +50,53 @@ namespace Fudp
         /// <summary>
         /// Отправляет сообщение
         /// </summary>
-        /// <param name="d">CAN порт</param>
+        /// <param name="flow">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <param name="Data">Отправляемые данные</param>
-        public static void SendMsg(CanPort d, Message msg, int TimeOut = 2000)
+        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000)
         {
-            using (var flow = new CanFlow(d, transmitDescriptior, acknowlegmentDescriptior))
-            {
-                IsoTp.BeginSend(flow, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut)).Wait();
-            }
+#if DEBUG
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("--> Отправляем {0}", msg);
+            Console.ResetColor();
+#endif
+            flow.Clear();
+            IsoTp.Send(flow, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
         }
         /// <summary>
         /// Получает ответ от устройства
         /// </summary>
-        /// <param name="port">CAN порт</param>
+        /// <param name="flow">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns>Принятые данные</returns>
-        public static Byte[] GetMsg(CanPort port, DeviceTicket device, int TimeOut = 2000)
+        public static Message GetMsg(CanFlow flow, DeviceTicket device, int TimeOut = 2000)
         {
-            try
+            var tr = IsoTp.Receive(flow, FuDev, FuProg, TimeSpan.FromMilliseconds(TimeOut));
+            return Message.DecodeMessage(tr.Data);
+        }
+        public static MT GetMsg<MT>(CanFlow flow, DeviceTicket device, int TimeOut = 2000)
+            where MT : Message
+        {
+            DateTime startDt = DateTime.Now;
+            while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
             {
-                using (var flow = new CanFlow(port, transmitDescriptior, acknowlegmentDescriptior))
-                {
-                    TpReceiveTransaction rt = new TpReceiveTransaction(flow, acknowlegmentDescriptior, transmitDescriptior);
-                    rt.Timeout = TimeSpan.FromMilliseconds(TimeOut);
-                    return rt.Receive();
-                }
+                var tr = IsoTp.Receive(flow, FuDev, FuProg, TimeSpan.FromMilliseconds(TimeOut));
+                var mes = Message.DecodeMessage(tr.Data);
+                var Tmes = mes as MT;
+                if (Tmes != null) return Tmes;
+                else System.Diagnostics.Debug.WriteLine("#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1}", typeof(MT).Name, mes.GetType().Name);
             }
-            catch
-            {
-                if (TimeOut == 2000)
-                {
-                    //b = false;
-                    throw;
-                }
-                return null;
-            }
+            throw new TimeoutException("Не получено требуемого сообщения за указанное время");
         }
         /// <summary>
         /// Устанавливает соединение
         /// </summary>
-        /// <param name="Port">Номер порта</param>
+        /// <param name="Flow">Номер порта</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
-        public static CanProg Connect(CanPort Port, DeviceTicket device, int TransmitDescriptor, int AcknowlegmentDescriptor)
+        public static CanProg Connect(CanFlow Flow, DeviceTicket device, int TransmitDescriptor = FuInit, int AcknowlegmentDescriptor = FuDev)
         {
-            CanProg CP = new CanProg(Port)
+            CanProg CP = new CanProg(Flow)
             {
                 Device = device
             };
@@ -107,20 +111,18 @@ namespace Fudp
                 {
                     throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 }
-                
-                SendMsg(CP.Port, Init, 100);
+                Flow.Clear();
+                SendMsg(Flow, Init, 100);
                 i++;
                 try
                 {
-                    CP.Properties = Message.Decode<ProgStatus>(GetMsg(CP.Port, CP.Device, 100)).Properties;
-                    if (CP.Properties.Count != 0)
-                    {
-                        break;
-                    }                    
+                    var xxx = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100);
+                    CP.Properties = xxx.Properties;
+                    //CP.Properties = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100).Properties;
+                    break;
                 }
-                catch (Exception ex)
+                catch (TimeoutException)
                 {
-                    Console.WriteLine(ex.Message);
                 }
             }
             return CP;
@@ -132,8 +134,8 @@ namespace Fudp
         public List<DevFileInfo> ListFiles()
         {
             ProgListRq ListRq = new ProgListRq();
-            SendMsg(Port, ListRq);
-            return Message.Decode<ProgList>(GetMsg(Port, Device)).ListDevFileInfo;
+            SendMsg(Flow, ListRq);
+            return ((ProgList)GetMsg(Flow, Device)).ListDevFileInfo;
         }
         /// <summary>
         /// Запрос на чтение
@@ -151,9 +153,9 @@ namespace Fudp
 
             while (ReadRq.FileSize > 0)
             {
-                SendMsg(Port, ReadRq);
+                SendMsg(Flow, ReadRq);
                 
-                ProgRead Read = Message.Decode<ProgRead>(GetMsg(Port, Device));
+                ProgRead Read = (ProgRead)GetMsg(Flow, Device);
                 if (Read.ErrorCode != 0)
                     switch (Read.ErrorCode)
                     {
@@ -177,17 +179,17 @@ namespace Fudp
             {
                 FileName = FileName
             };
-            SendMsg(Port, Rm);
+            SendMsg(Flow, Rm);
 
-            return Message.Decode<ProgRmAck>(GetMsg(Port, Device)).ErrorCode;
+            return GetMsg<ProgRmAck>(Flow, Device).ErrorCode;
         }
         /// <summary>
         /// Команда на очистку памяти
         /// </summary>
-        public void MrProper()
+        public void Erase()
         {
             ProgMrPropper MrPropper = new ProgMrPropper();
-            SendMsg(Port, MrPropper);
+            SendMsg(Flow, MrPropper);
         }
         /// <summary>
         /// Команда на создание файла
@@ -201,11 +203,11 @@ namespace Fudp
             {
                 FileName = fileInfo.FileName,
                 FileSize = fileInfo.FileSize,
-                CRC = fileInfo.CalcCrc()
+                CRC = FudpCrc.CalcCrc(fileInfo.Data)
             };
 
-            SendMsg(Port, Create);
-            ProgCreateAck CreateAck = Message.Decode<ProgCreateAck>(GetMsg(Port, Device));
+            SendMsg(Flow, Create);
+            ProgCreateAck CreateAck = GetMsg<ProgCreateAck>(Flow, Device);
             if (CreateAck.ErrorCode != 0)
                 switch (CreateAck.ErrorCode)
                 {
@@ -230,7 +232,7 @@ namespace Fudp
                     Offset = offset
                 };
 
-                SendMsg(Port, PWrite);
+                SendMsg(Flow, PWrite);
 
                 Write(fileInfo,
                     PWrite.BuffSize >= ProgWrite.DataSize + PWrite.OverheadsBytes ?
@@ -250,8 +252,8 @@ namespace Fudp
                 ParamKey = paramKey,
                 ParamVlue = paramValue
             };
-            SendMsg(Port, psr);
-            ParamSetAck psa = Message.Decode<ParamSetAck>(GetMsg(Port, Device));
+            SendMsg(Flow, psr);
+            ParamSetAck psa = GetMsg<ParamSetAck>(Flow, Device);
             if (psa.ErrorCode == 0)
                 Console.WriteLine(psa.ErrorMsg[psa.ErrorCode]);
             else
@@ -267,8 +269,8 @@ namespace Fudp
             {
                 ParamKey = paramKey
             };
-            SendMsg(Port, prr);
-            ParamRmAck pra = Message.Decode<ParamRmAck>(GetMsg(Port, Device));
+            SendMsg(Flow, prr);
+            ParamRmAck pra = GetMsg<ParamRmAck>(Flow, Device);
             if (pra.ErrorCode == 0)
                 Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
             else

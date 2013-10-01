@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Fudp.Messages
 {
-    
+    [Identifer(0x01)]
     public class ProgInit : Message
     {
         public DeviceTicket Ticket { get; set; }
@@ -28,7 +28,8 @@ namespace Fudp.Messages
         public override byte[] Encode()
         {
             MemoryStream ms = new MemoryStream(BufferSize);
-            ms.WriteByte(0x01);
+            ms.WriteByte(MessageIdentifer);
+            ms.WriteByte((byte)Ticket.SystemId);
             ms.Write(BitConverter.GetBytes(Ticket.BlockId), 0, 2);
             ms.WriteByte((byte)((Ticket.Channel & 0x03) << 6 | Ticket.Module & 0x3f));
             ms.Write(BitConverter.GetBytes(Ticket.BlockSerialNumber), 0, 2);
@@ -41,11 +42,15 @@ namespace Fudp.Messages
                 new DeviceTicket()
                 {
                     SystemId = Data[1],
-                    BlockId = BitConverter.ToInt32(Data, 2),
+                    BlockId = BitConverter.ToUInt16(Data, 2),
                     Channel = Data[4] >> 6,
-                    Module = Data[4] ^ 0x3f,
-                    BlockSerialNumber = BitConverter.ToInt32(Data, 6)
+                    Module = Data[4] & 0x3f,
+                    BlockSerialNumber = BitConverter.ToUInt16(Data, 5)
                 };
         }
     }
+
+    [Identifer(0x14)]
+    public class ProgBroadcastAnswer : ProgInit
+    { }
 }

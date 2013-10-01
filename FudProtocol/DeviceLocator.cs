@@ -7,23 +7,43 @@ using Communications.Protocols.IsoTP;
 
 namespace Fudp
 {
+    /// <summary>
+    /// Содержит методы для поиска прошиваемых устройств в сети
+    /// </summary>
     public static class DeviceLocator
     {
+        /// <summary>
+        /// Находит в сети все устройства с заданным шаблоном билетов.
+        /// </summary>
+        /// <param name="Template">Шаблон билета устройства</param>
+        /// <param name="OnPort">Can-порт, через который осуществляется работа</param>
+        /// <param name="EchoTimeout">Таймаут (в милисекундах). Таймаут отсчитываетс с момента получения последней IsoTP-транзакции, а не с момента начала опроса</param>
+        /// <returns></returns>
         public static List<DeviceTicket> LocateDevices(DeviceTicket Template, CanPort OnPort, int EchoTimeout = 500)
         {
-            using (var flow = new CanFlow(OnPort, CanProg.FuDev))
+            using (var flow = new CanFlow(OnPort, CanProg.FuDev, CanProg.FuInit, CanProg.FuProg))
             {
                 if (Template.BlockSerialNumber != 0) Template.BlockSerialNumber = 0;
 
                 var HelloMessage = new Messages.ProgInit(Template);
-                IsoTp.BeginSend(flow, CanProg.FuProg, CanProg.FuDev, HelloMessage.Encode()).Wait();
+                flow.Clear();
+                IsoTp.Send(flow, CanProg.FuProg, CanProg.FuDev, HelloMessage.Encode());
 
-                return
-                    flow.Read(TimeSpan.FromMilliseconds(EchoTimeout), false)
-                        .Select(f => new Communications.Protocols.IsoTP.Frames.SingleFrame(f.Data).Data)
-                        .Select(d => Messages.Message.Decode<Messages.ProgInit>(d))
-                        .Select(m => m.Ticket)
-                        .ToList();
+                var res = new List<DeviceTicket>();
+                while (true)
+                {
+                    try
+                    {
+                        var tr = IsoTp.Receive(flow, CanProg.FuDev, CanProg.FuProg, TimeSpan.FromMilliseconds(EchoTimeout));
+                        var msg = Messages.Message.DecodeMessage(tr.Data);
+                        if (msg is Messages.ProgInit) res.Add((msg as Messages.ProgInit).Ticket);
+                    }
+                    catch (TimeoutException)
+                    {
+                        break;
+                    }
+                }
+                return res;
             }
         }
     }

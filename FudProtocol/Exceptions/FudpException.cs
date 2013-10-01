@@ -6,12 +6,12 @@ using System.Text;
 namespace Fudp.Exceptions
 {
     [Serializable]
-    public class CanProgException : Exception
+    public class FudpException : Exception
     {
-        public CanProgException() { }
-        public CanProgException(string message) : base(message) { }
-        public CanProgException(string message, Exception inner) : base(message, inner) { }
-        protected CanProgException(
+        public FudpException() { }
+        public FudpException(string message) : base(message) { }
+        public FudpException(string message, Exception inner) : base(message, inner) { }
+        protected FudpException(
           System.Runtime.Serialization.SerializationInfo info,
           System.Runtime.Serialization.StreamingContext context)
             : base(info, context) { }
