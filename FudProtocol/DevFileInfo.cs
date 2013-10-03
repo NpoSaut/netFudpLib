@@ -7,8 +7,6 @@ namespace Fudp
 {
     public class DevFileInfo
     {
-        public DevFileInfo()
-        { }
         /// <summary>
         /// Имя файла
         /// </summary>
@@ -35,6 +33,32 @@ namespace Fudp
         /// Данные
         /// </summary>
         public byte[] Data { get; set; }
+
+        /// <summary>
+        /// Создаёт образ файла на устройстве с указанными размером и контрольной суммой
+        /// </summary>
+        /// <param name="Name">Имя файла</param>
+        /// <param name="Size">Размер файла</param>
+        /// <param name="Checksum">Контрольная сумма</param>
+        public DevFileInfo(String Name, int Size, UInt16 Checksum)
+        {
+            this.FileName = Name;
+            this.FileSize = Size;
+            this.ControlSum = Checksum;
+            this.Data = null;
+        }
+        /// <summary>
+        /// Представляет файл на устройстве
+        /// </summary>
+        /// <param name="Name">Имя файла</param>
+        /// <param name="Data">Данные файла</param>
+        public DevFileInfo(String Name, Byte[] Data)
+        {
+            this.FileName = Name;
+            this.Data = Data;
+            this.FileSize = Data.Length;
+            this.ControlSum = FudpCrc.CalcCrc(Data);
+        }
 
         public override string ToString()
         {

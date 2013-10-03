@@ -59,10 +59,10 @@ namespace Fudp.Messages
                 Buffer.BlockCopy(bData, 1 + FileNameSize + i, bFileSize, 0, intSize);
                 Buffer.BlockCopy(bData, 5 + FileNameSize + i, bControlSum, 0, intSize);
 
-                DevFileInfo FileInfo = new DevFileInfo();
-                FileInfo.FileName = Encoding.GetEncoding(1251).GetString(bFileName);
-                FileInfo.FileSize = BitConverter.ToInt32(bFileSize,0);
-                FileInfo.ControlSum = BitConverter.ToUInt16(bControlSum,0);
+                DevFileInfo FileInfo = new DevFileInfo(
+                    Name: Encoding.GetEncoding(1251).GetString(bFileName),
+                    Size: BitConverter.ToInt32(bFileSize,0),
+                    Checksum: BitConverter.ToUInt16(bControlSum,0));
                                 
                 listDevFileInfo.Add(FileInfo);
             }

@@ -27,7 +27,7 @@ namespace Fudp
 
                 var HelloMessage = new Messages.ProgInit(Template);
                 flow.Clear();
-                IsoTp.Send(flow, CanProg.FuProg, CanProg.FuDev, HelloMessage.Encode());
+                IsoTp.Send(flow, CanProg.FuInit, CanProg.FuDev, HelloMessage.Encode());
 
                 var res = new List<DeviceTicket>();
                 while (true)

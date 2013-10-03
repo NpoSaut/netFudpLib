@@ -20,6 +20,8 @@ namespace Fudp
         public int Module { get; set; }
         /// <summary>Номер канала</summary>
         public int Channel { get; set; }
+        /// <summary>Модификация</summary>
+        public int Modification { get; set; }
 
         /// <summary>Создаёт билет устройства с параметрами по-умолчанию</summary>
         public DeviceTicket()
@@ -35,6 +37,7 @@ namespace Fudp
         public DeviceTicket(
             int SystemId,
             int BlockId,
+            int Modification,
             int BlockSerialNumber,
             int Module,
             int Channel)
@@ -42,6 +45,7 @@ namespace Fudp
         {
             this.SystemId = SystemId;
             this.BlockId = BlockId;
+            this.Modification = Modification;
             this.BlockSerialNumber = BlockSerialNumber;
             this.Module = Module;
             this.Channel = Channel;
@@ -56,20 +60,22 @@ namespace Fudp
         public DeviceTicket(
             int SystemId,
             int BlockId,
+            int Modification,
             int Module,
             int Channel)
-            : this(SystemId, BlockId, 0, Module, Channel)
+            : this(SystemId, BlockId, Modification, 0, Module, Channel)
         { }
 
         public override string ToString()
         {
             return
-                string.Format("{0}:{1}-{4:D5}/{3} [{2}]",
+                string.Format("{0}:{1}-{4:D5}:{5}/{3} [{2}]",
                     SystemId,
                     BlockId,
                     Module,
                     Channel,
-                    BlockSerialNumber);
+                    BlockSerialNumber,
+                    Modification);
         }
     }
 }

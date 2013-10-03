@@ -14,25 +14,20 @@ namespace Fudp.Messages
         public ParamRmRq()
         { }
 
-        private pKeys paramKey;
-        public pKeys ParamKey
-        {
-            private get { return paramKey; }
-            set { paramKey = value; }
-        }
+        public byte ParamKey { get; set; }
 
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
             buff[0] = 0x11;
-            buff[1] = (byte)paramKey;
+            buff[1] = (byte)ParamKey;
             return buff;
         }
 
 
         protected override void Decode(byte[] Data)
         {
-            paramKey = (pKeys)Data[1];
+            ParamKey = Data[1];
         }
     }
 }

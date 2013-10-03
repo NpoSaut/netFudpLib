@@ -19,7 +19,6 @@ namespace Fudp.Messages
         public Dictionary<int, string> ErrorMsg
         {
             get { return errorMsg; }
-            set { ;}
         }
         /// <summary>
         /// Код ошибки
@@ -28,13 +27,11 @@ namespace Fudp.Messages
         public int ErrorCode
         {
             get { return errorCode; }
-            set { ;}
         }
         private Byte[] buff;
         public byte[] Buff
         {
             get { return buff; }
-            set { ;}
         }
         public ProgCreateAck()
         {

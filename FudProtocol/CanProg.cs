@@ -211,9 +211,9 @@ namespace Fudp
             if (CreateAck.ErrorCode != 0)
                 switch (CreateAck.ErrorCode)
                 {
-                    case 1: throw new FileNotFoundException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
-                    case 2: throw new IndexOutOfRangeException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
-                    case 3: throw new ArgumentOutOfRangeException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
+                    case 1: throw new CanProgFileAlreadyExistsException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
+                    case 2: throw new CanProgMaximumFilesCountAchivedException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
+                    case 3: throw new CanProgMemoryIsOutException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
                     case 4: throw new CanProgCreateException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
                     default: throw new CanProgException();
                 }
@@ -245,7 +245,7 @@ namespace Fudp
         /// </summary>
         /// <param name="paramKey">Ключ</param>
         /// <param name="paramValue">Значение свойства</param>
-        public void SetParam(pKeys paramKey, int paramValue)
+        public void SetParam(byte paramKey, int paramValue)
         {
             ParamSetRq psr = new ParamSetRq()
             {
@@ -263,7 +263,7 @@ namespace Fudp
         /// Удаление записи из словаря свойств
         /// </summary>
         /// <param name="paramKey">Ключ</param>
-        public void DeleteProperty(pKeys paramKey)
+        public void DeleteProperty(byte paramKey)
         {
             ParamRmRq prr = new ParamRmRq()
             {
