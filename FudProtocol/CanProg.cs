@@ -23,12 +23,12 @@ namespace Fudp
             Properties = new Dictionary<int, int>();
         }
 
-        //public const int FuInit = 0xfc28;
-        //public const int FuProg = 0xfc48;
-        //public const int FuDev = 0xfc68;
-        public const int FuInit = 0x3008;
-        public const int FuProg = 0x3008;
-        public const int FuDev = 0x4008;
+        public const int FuInit = 0xfc08;
+        public const int FuProg = 0xfc28;
+        public const int FuDev =  0xfc48;
+        //public const int FuInit = 0x3008;
+        //public const int FuProg = 0x3008;
+        //public const int FuDev = 0x4008;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>

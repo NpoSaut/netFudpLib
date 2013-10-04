@@ -27,13 +27,15 @@ namespace Fudp.Messages
         /// </summary>
         public override byte[] Encode()
         {
-            MemoryStream ms = new MemoryStream(BufferSize);
-            ms.WriteByte(MessageIdentifer);
-            ms.WriteByte((byte)Ticket.SystemId);
-            ms.Write(BitConverter.GetBytes(Ticket.BlockId), 0, 2);
-            ms.WriteByte((byte)((Ticket.Channel & 0x03) << 6 | Ticket.Module & 0x3f));
-            ms.Write(BitConverter.GetBytes(Ticket.BlockSerialNumber), 0, 2);
-            return ms.ToArray();
+            var buff = new byte[BufferSize];
+            buff[0] = MessageIdentifer;
+            buff[1] = (byte)((Ticket.BlockId & 0xff0) >> 4);
+            buff[2] = (byte)((Ticket.BlockId & 0x00f) << 4 | Ticket.Modification & 0x0f);
+            buff[3] = (byte)(Ticket.Module);
+            buff[4] = (byte)((Ticket.Channel & 0x0f) << 4 | (Ticket.BlockSerialNumber & 0xf0000) >> 16);
+            buff[5] = (byte)((Ticket.BlockSerialNumber & 0x0ff00) >> 8);
+            buff[6] = (byte)(Ticket.BlockSerialNumber & 0x000ff);
+            return buff;
         }
 
         protected override void Decode(byte[] Data)
@@ -41,11 +43,11 @@ namespace Fudp.Messages
             this.Ticket =
                 new DeviceTicket()
                 {
-                    SystemId = Data[1],
-                    BlockId = BitConverter.ToUInt16(Data, 2),
-                    Channel = Data[4] >> 6,
-                    Module = Data[4] & 0x3f,
-                    BlockSerialNumber = BitConverter.ToUInt16(Data, 5)
+                    BlockId = (Data[1] << 4) | ((Data[2] & 0xf0) >> 4),
+                    Modification = Data[2] & 0x0f,
+                    Module = Data[3],
+                    Channel = (Data[4] & 0xf0) >> 4,
+                    BlockSerialNumber = ((Data[4] & 0x0f) << 16) | (Data[5] << 8) | Data[6]
                 };
         }
     }
