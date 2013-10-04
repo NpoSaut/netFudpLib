@@ -36,7 +36,7 @@ namespace Fudp
                     {
                         var tr = IsoTp.Receive(flow, CanProg.FuDev, CanProg.FuProg, TimeSpan.FromMilliseconds(EchoTimeout));
                         var msg = Messages.Message.DecodeMessage(tr.Data);
-                        if (msg is Messages.ProgInit) res.Add((msg as Messages.ProgInit).Ticket);
+                        if (msg is Messages.ProgBroadcastAnswer) res.Add((msg as Messages.ProgBroadcastAnswer).Ticket);
                     }
                     catch (TimeoutException)
                     {
