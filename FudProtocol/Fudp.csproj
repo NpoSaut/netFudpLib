@@ -58,6 +58,7 @@
     <Compile Include="DeviceTicket.cs" />
     <Compile Include="Exceptions\FudpUnknownIdentiferExceptoin.cs" />
     <Compile Include="FudpCrc.cs" />
+    <Compile Include="ICanProgLog.cs" />
     <Compile Include="IdentiferAttribute.cs" />
     <Compile Include="Messages\ParamRmAck.cs" />
     <Compile Include="Messages\ParamRmRq.cs" />

@@ -17,6 +17,8 @@ namespace Fudp
     /// </summary>
     public class CanProg
     {
+        public static IList<ICanProgLog> Logs { get; set; }
+
         public CanProg(CanFlow Flow)
         {
             this.Flow = Flow;
@@ -56,9 +58,7 @@ namespace Fudp
         public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000)
         {
 #if DEBUG
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("--> Отправляем {0}", msg);
-            Console.ResetColor();
+            Logs.PushFormatTextEvent("--> Отправляем {0}", msg);
 #endif
             flow.Clear();
             IsoTp.Send(flow, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
@@ -77,6 +77,9 @@ namespace Fudp
         public static MT GetMsg<MT>(CanFlow flow, DeviceTicket device, int TimeOut = 2000)
             where MT : Message
         {
+#if DEBUG
+            Logs.PushFormatTextEvent("<-- Ожидаем сообщения {0}", typeof(MT));
+#endif
             DateTime startDt = DateTime.Now;
             while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
             {
@@ -84,7 +87,7 @@ namespace Fudp
                 var mes = Message.DecodeMessage(tr.Data);
                 var Tmes = mes as MT;
                 if (Tmes != null) return Tmes;
-                else System.Diagnostics.Debug.WriteLine("#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1}", typeof(MT).Name, mes.GetType().Name);
+                else Console.WriteLine("#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}", typeof(MT).Name, mes.GetType().Name, mes.ToString());
             }
             throw new TimeoutException("Не получено требуемого сообщения за указанное время");
         }
@@ -135,7 +138,7 @@ namespace Fudp
         {
             ProgListRq ListRq = new ProgListRq();
             SendMsg(Flow, ListRq);
-            return ((ProgList)GetMsg(Flow, Device)).ListDevFileInfo;
+            return GetMsg<ProgList>(Flow, Device).ListDevFileInfo;
         }
         /// <summary>
         /// Запрос на чтение

@@ -26,7 +26,6 @@ namespace Fudp
                 if (Template.BlockSerialNumber != 0) Template.BlockSerialNumber = 0;
 
                 var HelloMessage = new Messages.ProgInit(Template);
-                flow.Clear();
                 IsoTp.Send(flow, CanProg.FuInit, CanProg.FuDev, HelloMessage.Encode());
 
                 var res = new List<DeviceTicket>();

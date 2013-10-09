@@ -54,5 +54,10 @@ namespace Fudp.Messages
 
     [Identifer(0x14)]
     public class ProgBroadcastAnswer : ProgInit
-    { }
+    {
+        public override string ToString()
+        {
+            return string.Format("BC-Answ от {0}", Ticket);
+        }
+    }
 }
