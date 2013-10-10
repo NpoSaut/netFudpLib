@@ -21,7 +21,7 @@ namespace Fudp.Messages
         /// <returns></returns>
         public override byte[] Encode()
         {
-            byte [] buff = new byte[7];
+            byte [] buff = new byte[7];     // TODO: Почему 7? И почему у Димы работает с семёркой??
             buff[0] = MessageIdentifer;
             return buff;
         }

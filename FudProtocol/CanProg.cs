@@ -25,12 +25,9 @@ namespace Fudp
             Properties = new Dictionary<int, int>();
         }
 
-        public const int FuInit = 0xfc08;
-        public const int FuProg = 0xfc28;
-        public const int FuDev =  0xfc48;
-        //public const int FuInit = 0x3008;
-        //public const int FuProg = 0x3008;
-        //public const int FuDev = 0x4008;
+        public const UInt16 FuInit = 0xfc08;
+        public const UInt16 FuProg = 0xfc28;
+        public const UInt16 FuDev =  0xfc48;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>
@@ -42,26 +39,18 @@ namespace Fudp
 
         public DeviceTicket Device { get; private set; }
         /// <summary>
-        /// Дескриптор
-        /// </summary>
-        private static int transmitDescriptior;
-        /// <summary>
-        /// Дескриптор
-        /// </summary>
-        private static int acknowlegmentDescriptior;
-        /// <summary>
         /// Отправляет сообщение
         /// </summary>
         /// <param name="flow">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <param name="Data">Отправляемые данные</param>
-        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000)
+        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuProg, UInt16 WithAcknowlegmentDescriptior = FuDev)
         {
 #if DEBUG
             Logs.PushFormatTextEvent("--> Отправляем {0}", msg);
 #endif
             flow.Clear();
-            IsoTp.Send(flow, transmitDescriptior, acknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
+            IsoTp.Send(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
         }
         /// <summary>
         /// Получает ответ от устройства
@@ -69,12 +58,12 @@ namespace Fudp
         /// <param name="flow">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns>Принятые данные</returns>
-        public static Message GetMsg(CanFlow flow, DeviceTicket device, int TimeOut = 2000)
+        public static Message GetMsg(CanFlow flow, DeviceTicket device, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
         {
-            var tr = IsoTp.Receive(flow, FuDev, FuProg, TimeSpan.FromMilliseconds(TimeOut));
+            var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(CanFlow flow, DeviceTicket device, int TimeOut = 2000)
+        public static MT GetMsg<MT>(CanFlow flow, DeviceTicket device, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
             where MT : Message
         {
 #if DEBUG
@@ -83,7 +72,7 @@ namespace Fudp
             DateTime startDt = DateTime.Now;
             while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
             {
-                var tr = IsoTp.Receive(flow, FuDev, FuProg, TimeSpan.FromMilliseconds(TimeOut));
+                var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, TimeSpan.FromMilliseconds(TimeOut));
                 var mes = Message.DecodeMessage(tr.Data);
                 var Tmes = mes as MT;
                 if (Tmes != null) return Tmes;
@@ -97,14 +86,12 @@ namespace Fudp
         /// <param name="Flow">Номер порта</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
-        public static CanProg Connect(CanFlow Flow, DeviceTicket device, int TransmitDescriptor = FuInit, int AcknowlegmentDescriptor = FuDev)
+        public static CanProg Connect(CanFlow Flow, DeviceTicket device)
         {
             CanProg CP = new CanProg(Flow)
             {
                 Device = device
             };
-            CanProg.transmitDescriptior = TransmitDescriptor;
-            CanProg.acknowlegmentDescriptior = AcknowlegmentDescriptor;
             ProgInit Init = new ProgInit(device);
             int i = 0;
             while(true)
@@ -115,11 +102,11 @@ namespace Fudp
                     throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 }
                 Flow.Clear();
-                SendMsg(Flow, Init, 100);
+                SendMsg(Flow, Init, 100, WithTransmitDescriptior: FuInit);
                 i++;
                 try
                 {
-                    var xxx = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100);
+                    var xxx = GetMsg<ProgStatus>(CP.Flow, CP.Device, 1000);
                     CP.Properties = xxx.Properties;
                     //CP.Properties = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100).Properties;
                     break;
@@ -200,7 +187,7 @@ namespace Fudp
         /// <param name="fileName">Имя файла</param>
         /// <param name="Data">Данные</param>
         /// <returns></returns>
-        public void CreateFile(DevFileInfo fileInfo)
+        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null)
         {
             ProgCreate Create = new ProgCreate()
             {
@@ -223,8 +210,9 @@ namespace Fudp
             Write(fileInfo);
         }
 
-        private void Write(DevFileInfo fileInfo, int offset = 0)
+        private void Write(DevFileInfo fileInfo, int offset = 0, IProgressAcceptor ProgressAcceptor = null)
         {
+            ProgressAcceptor.OnProgressChanged(Math.Min(1, (double)offset / fileInfo.FileSize));
             if (fileInfo.FileSize - offset > 0)
             {
                 ProgWrite PWrite = new ProgWrite()
@@ -237,11 +225,13 @@ namespace Fudp
 
                 SendMsg(Flow, PWrite);
 
-                Write(fileInfo,
-                    PWrite.BuffSize >= ProgWrite.DataSize + PWrite.OverheadsBytes ?
-                        offset += PWrite.BuffSize - PWrite.OverheadsBytes : offset += PWrite.BuffSize
+                Write(
+                    fileInfo,
+                    offset: PWrite.BuffSize >= ProgWrite.DataSize + PWrite.OverheadsBytes ?
+                            offset += PWrite.BuffSize - PWrite.OverheadsBytes : offset += PWrite.BuffSize,
+                    ProgressAcceptor: ProgressAcceptor
                     );
-            }            
+            }
         }
         /// <summary>
         /// Команда на содание или изменение записи в словаре свойств
