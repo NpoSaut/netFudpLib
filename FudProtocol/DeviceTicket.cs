@@ -21,9 +21,6 @@ namespace Fudp
         /// <summary>Модификация</summary>
         public int Modification { get; set; }
 
-        /// <summary>Создаёт билет устройства с параметрами по-умолчанию</summary>
-        public DeviceTicket()
-        { }
         /// <summary>
         /// Создаёт билет устройства с заданными параметрами
         /// </summary>
@@ -33,12 +30,11 @@ namespace Fudp
         /// <param name="Module">Номер модуля</param>
         /// <param name="Channel">Номер канала (полукомплекта), начиная с 1</param>
         public DeviceTicket(
-            int BlockId,
-            int Modification,
-            int BlockSerialNumber,
-            int Module,
-            int Channel)
-            : this()
+            int BlockId = 0,
+            int Modification = 0,
+            int BlockSerialNumber = 0,
+            int Module = 0,
+            int Channel = 0)
         {
             this.BlockId = BlockId;
             this.Modification = Modification;
@@ -46,20 +42,6 @@ namespace Fudp
             this.Module = Module;
             this.Channel = Channel;
         }
-        /// <summary>
-        /// Создаёт броадкаст-билет устройств с заданными параметрами
-        /// </summary>
-        /// <param name="SystemId">Id Системы</param>
-        /// <param name="BlockId">Id блока</param>
-        /// <param name="Module">Номер модуля</param>
-        /// <param name="Channel">Номер канала (полукомплекта), начиная с 1</param>
-        public DeviceTicket(
-            int BlockId,
-            int Modification,
-            int Module,
-            int Channel)
-            : this(BlockId, Modification, 0, Module, Channel)
-        { }
 
         public override string ToString()
         {
@@ -70,6 +52,27 @@ namespace Fudp
                     Module,
                     BlockSerialNumber,
                     Channel);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            var t = (DeviceTicket)obj;
+            return
+                this.BlockId == this.BlockId &&
+                this.Modification == this.Modification &&
+                this.Module == this.Module &&
+                this.BlockSerialNumber == this.BlockSerialNumber &&
+                this.Channel == this.Channel;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.ToString().GetHashCode();
         }
     }
 }
