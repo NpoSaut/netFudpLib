@@ -15,8 +15,9 @@ namespace Fudp
     /// <summary>
     /// Класс компанует, отправляет сообщение и получает ответ
     /// </summary>
-    public class CanProg
+    public class CanProg : IDisposable
     {
+        private bool DisposeFlowOnExit = false;
         public static IList<ICanProgLog> Logs { get; set; }
 
         public CanProg(CanFlow Flow)
@@ -83,7 +84,19 @@ namespace Fudp
         /// <summary>
         /// Устанавливает соединение
         /// </summary>
-        /// <param name="Flow">Номер порта</param>
+        /// <param name="Flow">Can-порт</param>
+        /// <param name="device">Класс содержащий параметры системы и блока</param>
+        /// <returns></returns>
+        public static CanProg Connect(CanPort Port, DeviceTicket device)
+        {
+            var session = Connect(new CanFlow(Port, FuDev, FuInit, FuProg), device);
+            session.DisposeFlowOnExit = true;
+            return session;
+        }
+        /// <summary>
+        /// Устанавливает соединение
+        /// </summary>
+        /// <param name="Flow">Пото Can-сообщений</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
         public static CanProg Connect(CanFlow Flow, DeviceTicket device)
@@ -274,9 +287,8 @@ namespace Fudp
         /// </summary>
         public void Dispose()
         {
-            byte[] b = new byte[1];
-            b[1] = 0x0f;
-            //SendMsg(port, device, b);
+            SendMsg(Flow, new ProgSubmit());
+            if (DisposeFlowOnExit) Flow.Dispose();
         }
     }
 }

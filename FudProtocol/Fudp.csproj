@@ -67,6 +67,7 @@
     <Compile Include="Messages\ParamSetAck.cs" />
     <Compile Include="Messages\ParamSetRq.cs" />
     <Compile Include="Messages\ProgChecksumError.cs" />
+    <Compile Include="Messages\ProgSubmit.cs" />
     <Compile Include="Messages\ProgCreateAck.cs" />
     <Compile Include="Messages\ProgMrProperAck.cs" />
     <Compile Include="Messages\ProgCreate.cs" />

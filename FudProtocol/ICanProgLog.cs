@@ -24,7 +24,8 @@ namespace Fudp
 
         public static void PushFormatTextEvent(this IEnumerable<ICanProgLog> Loggers, String Format, params object[] ps)
         {
-            Loggers.PushTextEvent(string.Format(Format, ps));
+            if (Loggers != null)
+                Loggers.PushTextEvent(string.Format(Format, ps));
         }
     }
 }
