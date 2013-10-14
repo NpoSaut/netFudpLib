@@ -220,31 +220,23 @@ namespace Fudp
                     case 4: throw new CanProgCreateException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
                     default: throw new CanProgException();
                 }
-            Write(fileInfo);
+
+            int pointer = 0;
+            while (pointer < fileInfo.FileSize)
+            {
+                pointer += Write(fileInfo, pointer);
+                System.Threading.Thread.Sleep(100);     // TODO: плохо, плохо... ПОЧЕМУ????
+
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, (double)(pointer / fileInfo.FileSize)));
+            }
         }
 
-        private void Write(DevFileInfo fileInfo, int offset = 0, IProgressAcceptor ProgressAcceptor = null)
+        private int Write(DevFileInfo fileInfo, int offset)
         {
-            ProgressAcceptor.OnProgressChanged(Math.Min(1, (double)offset / fileInfo.FileSize));
-            if (fileInfo.FileSize - offset > 0)
-            {
-                ProgWrite PWrite = new ProgWrite()
-                {
-                    FileName = fileInfo.FileName,
-                    WBuff = fileInfo.Data,
-                    BuffSize = fileInfo.FileSize,
-                    Offset = offset
-                };
+            ProgWrite WriteMessage = new ProgWrite(fileInfo, offset);
+            SendMsg(Flow, WriteMessage);
 
-                SendMsg(Flow, PWrite);
-
-                Write(
-                    fileInfo,
-                    offset: PWrite.BuffSize >= ProgWrite.DataSize + PWrite.OverheadsBytes ?
-                            offset += PWrite.BuffSize - PWrite.OverheadsBytes : offset += PWrite.BuffSize,
-                    ProgressAcceptor: ProgressAcceptor
-                    );
-            }
+            return WriteMessage.Data.Length;
         }
         /// <summary>
         /// Команда на содание или изменение записи в словаре свойств

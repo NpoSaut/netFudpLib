@@ -13,8 +13,10 @@ namespace Fudp.Messages
         protected abstract void Decode(Byte[] Data);
         public abstract Byte[] Encode();
 
-        private static readonly Lazy<Dictionary<byte, Type>> _Identifers = new Lazy<Dictionary<byte,Type>>(InitializeIdentifers, true);
+        private static readonly Encoding _DefaultEncodung = Encoding.GetEncoding(1251);
+        protected static Encoding DefaultEncodung { get { return _DefaultEncodung; } }
 
+        private static readonly Lazy<Dictionary<byte, Type>> _Identifers = new Lazy<Dictionary<byte,Type>>(InitializeIdentifers, true);
         public static Dictionary<byte, Type> Identifers
         {
             get { return _Identifers.Value; }
@@ -32,9 +34,9 @@ namespace Fudp.Messages
         }
 
         public static T Decode<T>(Byte[] Data)
-            where T : Message, new()
+            where T : Message
         {
-            var res = new T();
+            var res = Activator.CreateInstance<T>();
             if (Data[0] != GetIdentifer<T>()) throw new Exceptions.FudpIdentiferMismatchException();
             res.Decode(Data);
             return res;
