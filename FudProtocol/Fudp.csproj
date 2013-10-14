@@ -50,6 +50,7 @@
     <Compile Include="Exceptions\CanProgCreateException.cs" />
     <Compile Include="Exceptions\CanProgException.cs" />
     <Compile Include="Exceptions\CanProgFileopException.cs" />
+    <Compile Include="Exceptions\CanProgTransportException.cs" />
     <Compile Include="Exceptions\FudpException.cs" />
     <Compile Include="Exceptions\FudpIdentiferMismatchException.cs" />
     <Compile Include="Exceptions\CanProgLimitConnectExcepion.cs" />

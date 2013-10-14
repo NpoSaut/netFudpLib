@@ -51,7 +51,20 @@ namespace Fudp
             Logs.PushFormatTextEvent("--> Отправляем {0}", msg);
 #endif
             flow.Clear();
-            IsoTp.Send(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
+            const int MaxAttempts = 3;
+            for (int attempt = 0; attempt < MaxAttempts; attempt ++)
+            {
+                try
+                {
+                    IsoTp.Send(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
+                    break;
+                }
+                catch(IsoTpTransactionAbortedException AbortException)
+                {
+                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", AbortException);
+                    if (attempt >= MaxAttempts) throw new CanProgTransportException(AbortException);
+                }
+            }
         }
         /// <summary>
         /// Получает ответ от устройства
