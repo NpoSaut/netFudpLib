@@ -56,13 +56,15 @@ namespace Fudp
             {
                 try
                 {
+                    flow.Clear();
                     IsoTp.Send(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
                     break;
                 }
                 catch(IsoTpTransactionAbortedException AbortException)
                 {
-                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", AbortException);
-                    if (attempt >= MaxAttempts) throw new CanProgTransportException(AbortException);
+                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", AbortException.Message);
+                    System.Threading.Thread.Sleep(1000);
+                    if (attempt >= MaxAttempts-1) throw new CanProgTransportException(AbortException);
                 }
             }
         }
@@ -265,9 +267,7 @@ namespace Fudp
             };
             SendMsg(Flow, psr);
             ParamSetAck psa = GetMsg<ParamSetAck>(Flow, Device);
-            if (psa.ErrorCode == 0)
-                Console.WriteLine(psa.ErrorMsg[psa.ErrorCode]);
-            else
+            if (psa.ErrorCode != 0)
                 throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
         }
         /// <summary>

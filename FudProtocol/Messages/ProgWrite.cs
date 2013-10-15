@@ -7,7 +7,7 @@ using System.IO;
 namespace Fudp.Messages
 {
     [Identifer(0x0b)]
-    class ProgWrite : Message
+    public class ProgWrite : Message
     {
         public const int PacketSize = 4000;
         
@@ -88,9 +88,7 @@ namespace Fudp.Messages
                 w.Write((int)Offset);
                 w.Write(Data);
             }
-            var arra = ms.ToArray();
-            CanProg.Logs.PushFormatTextEvent("WRITE: {0}", string.Join(" ", arra.Take(GetHeaderLength(FileName)).Select(b => b.ToString("X2"))));
-            return arra;
+            return ms.ToArray();
         }
 
         protected override void Decode(byte[] Data)
