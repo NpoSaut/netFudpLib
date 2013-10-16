@@ -39,6 +39,9 @@ namespace Fudp
         public CanFlow Flow { get; private set; }
 
         public DeviceTicket Device { get; private set; }
+        
+        const int MaxAttempts = 20;
+
         /// <summary>
         /// Отправляет сообщение
         /// </summary>
@@ -51,7 +54,6 @@ namespace Fudp
             Logs.PushFormatTextEvent("--> Отправляем {0}", msg);
 #endif
             flow.Clear();
-            const int MaxAttempts = 3;
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
             {
                 try
@@ -66,20 +68,46 @@ namespace Fudp
                     System.Threading.Thread.Sleep(1000);
                     if (attempt >= MaxAttempts-1) throw new CanProgTransportException(AbortException);
                 }
+                catch (TimeoutException TimeoutException)
+                {
+                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", TimeoutException.Message);
+                    System.Threading.Thread.Sleep(1000);
+                    if (attempt >= MaxAttempts - 1) throw new CanProgTransportException(TimeoutException);
+                }
             }
         }
+
+        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptior = FuProg, UInt16 TheirSideDescriptior = FuDev)
+            where AnswerType : Message
+        {
+            Exception LastException = null;
+            for (int attempt = 0; attempt < MaxAttempts; attempt++)
+            {
+                try
+                {
+                    SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptior, TheirSideDescriptior);
+                    return GetMsg<AnswerType>(flow, TimeOut, TheirSideDescriptior, ThisSideDescriptior);
+                }
+                catch (IsoTpTransactionAbortedException ex) { LastException = ex; }
+                catch (TimeoutException ex) { LastException = ex; }
+                System.Threading.Thread.Sleep(1000);
+            }
+            Logs.PushFormatTextEvent("Исключение во время передачи: {0}", LastException);
+            throw new CanProgTransportException(LastException);
+        }
+
         /// <summary>
         /// Получает ответ от устройства
         /// </summary>
         /// <param name="flow">CAN порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns>Принятые данные</returns>
-        public static Message GetMsg(CanFlow flow, DeviceTicket device, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
+        public static Message GetMsg(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
         {
             var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(CanFlow flow, DeviceTicket device, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
+        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
             where MT : Message
         {
 #if DEBUG
@@ -134,7 +162,7 @@ namespace Fudp
                 i++;
                 try
                 {
-                    var xxx = GetMsg<ProgStatus>(CP.Flow, CP.Device, 1000);
+                    var xxx = GetMsg<ProgStatus>(CP.Flow, 1000);
                     CP.Properties = xxx.Properties;
                     //CP.Properties = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100).Properties;
                     break;
@@ -145,6 +173,7 @@ namespace Fudp
             }
             return CP;
         }
+
         /// <summary>
         /// Запрос списка файлов
         /// </summary>
@@ -152,8 +181,7 @@ namespace Fudp
         public List<DevFileInfo> ListFiles()
         {
             ProgListRq ListRq = new ProgListRq();
-            SendMsg(Flow, ListRq);
-            return GetMsg<ProgList>(Flow, Device).ListDevFileInfo;
+            return Request<ProgList>(Flow, ListRq).ListDevFileInfo;
         }
         /// <summary>
         /// Запрос на чтение
@@ -173,7 +201,7 @@ namespace Fudp
             {
                 SendMsg(Flow, ReadRq);
                 
-                ProgRead Read = (ProgRead)GetMsg(Flow, Device);
+                ProgRead Read = (ProgRead)GetMsg(Flow);
                 if (Read.ErrorCode != 0)
                     switch (Read.ErrorCode)
                     {
@@ -199,7 +227,7 @@ namespace Fudp
             };
             SendMsg(Flow, Rm);
 
-            return GetMsg<ProgRmAck>(Flow, Device).ErrorCode;
+            return GetMsg<ProgRmAck>(Flow).ErrorCode;
         }
         /// <summary>
         /// Команда на очистку памяти
@@ -225,7 +253,7 @@ namespace Fudp
             };
 
             SendMsg(Flow, Create);
-            ProgCreateAck CreateAck = GetMsg<ProgCreateAck>(Flow, Device);
+            ProgCreateAck CreateAck = GetMsg<ProgCreateAck>(Flow);
             if (CreateAck.ErrorCode != 0)
                 switch (CreateAck.ErrorCode)
                 {
@@ -242,7 +270,7 @@ namespace Fudp
                 pointer += Write(fileInfo, pointer);
                 System.Threading.Thread.Sleep(100);     // TODO: плохо, плохо... ПОЧЕМУ????
 
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, (double)(pointer / fileInfo.FileSize)));
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
             }
         }
 
@@ -266,7 +294,7 @@ namespace Fudp
                 ParamVlue = paramValue
             };
             SendMsg(Flow, psr);
-            ParamSetAck psa = GetMsg<ParamSetAck>(Flow, Device);
+            ParamSetAck psa = GetMsg<ParamSetAck>(Flow);
             if (psa.ErrorCode != 0)
                 throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
         }
@@ -281,7 +309,7 @@ namespace Fudp
                 ParamKey = paramKey
             };
             SendMsg(Flow, prr);
-            ParamRmAck pra = GetMsg<ParamRmAck>(Flow, Device);
+            ParamRmAck pra = GetMsg<ParamRmAck>(Flow);
             if (pra.ErrorCode == 0)
                 Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
             else
