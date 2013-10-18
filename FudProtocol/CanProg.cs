@@ -199,7 +199,7 @@ namespace Fudp
 
             while (ReadRq.FileSize > 0)
             {
-                SendMsg(Flow, ReadRq);
+                Request<ProgRead>(Flow, ReadRq);
                 
                 ProgRead Read = (ProgRead)GetMsg(Flow);
                 if (Read.ErrorCode != 0)
@@ -225,9 +225,7 @@ namespace Fudp
             {
                 FileName = FileName
             };
-            SendMsg(Flow, Rm);
-
-            return GetMsg<ProgRmAck>(Flow).ErrorCode;
+            return Request<ProgRmAck>(Flow, Rm).ErrorCode;
         }
         /// <summary>
         /// Команда на очистку памяти
@@ -252,8 +250,7 @@ namespace Fudp
                 CRC = FudpCrc.CalcCrc(fileInfo.Data)
             };
 
-            SendMsg(Flow, Create);
-            ProgCreateAck CreateAck = GetMsg<ProgCreateAck>(Flow);
+            ProgCreateAck CreateAck = Request<ProgCreateAck>(Flow, Create);
             if (CreateAck.ErrorCode != 0)
                 switch (CreateAck.ErrorCode)
                 {
@@ -293,8 +290,7 @@ namespace Fudp
                 ParamKey = paramKey,
                 ParamVlue = paramValue
             };
-            SendMsg(Flow, psr);
-            ParamSetAck psa = GetMsg<ParamSetAck>(Flow);
+            ParamSetAck psa = Request<ParamSetAck>(Flow, psr);
             if (psa.ErrorCode != 0)
                 throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
         }
@@ -308,8 +304,7 @@ namespace Fudp
             {
                 ParamKey = paramKey
             };
-            SendMsg(Flow, prr);
-            ParamRmAck pra = GetMsg<ParamRmAck>(Flow);
+            ParamRmAck pra = Request<ParamRmAck>(Flow, prr);
             if (pra.ErrorCode == 0)
                 Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
             else
