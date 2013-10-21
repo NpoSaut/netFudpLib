@@ -167,9 +167,8 @@ namespace Fudp
                     //CP.Properties = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100).Properties;
                     break;
                 }
-                catch (TimeoutException)
-                {
-                }
+                catch (TimeoutException) { }
+                catch (IsoTpProtocolException) { }
             }
             return CP;
         }
