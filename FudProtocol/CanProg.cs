@@ -17,8 +17,41 @@ namespace Fudp
     /// </summary>
     public class CanProg : IDisposable
     {
+        public const int CurrentProtocolVersion = 1;
+        public const int LastCompatibleProtocolVersion = 1;
+        private const int ProtocolVersionKey = 195;
+        private const int LastCompatibleProtocolVersionKey = 196;
+
         private bool DisposeFlowOnExit = false;
         public static IList<ICanProgLog> Logs { get; set; }
+
+        public enum CheckVersionResult
+        {
+            /// <summary>Версии идентичны</summary>
+            Equails,
+            /// <summary>Версии совместимы</summary>
+            Compatible,
+            /// <summary>Версии не совместимы</summary>
+            UnCompatible
+        }
+        /// <summary>
+        /// Проверяет совместимость версии загрузчика с версией программатора
+        /// </summary>
+        /// <returns></returns>
+        public CheckVersionResult CheckProtocolVersion()
+        {
+            int deviceCurrentProtocolVersion = Properties.ContainsKey(ProtocolVersionKey) ? Properties[ProtocolVersionKey] : 1;
+            int deviceLastCompatibleProtocolVersion = Properties.ContainsKey(LastCompatibleProtocolVersionKey) ? Properties[LastCompatibleProtocolVersionKey] : 1;
+
+            // Версии протокола идентичны
+            if (deviceCurrentProtocolVersion == CurrentProtocolVersion) return CheckVersionResult.Equails;
+            // Версия программатора устарела, но является совместимой с версией загрузчика
+            else if (CurrentProtocolVersion < deviceCurrentProtocolVersion && CurrentProtocolVersion >= deviceLastCompatibleProtocolVersion) return CheckVersionResult.Compatible;
+            // Версия загрузчика устарела, но является совместимой с версией программатора
+            else if (CurrentProtocolVersion > deviceCurrentProtocolVersion && deviceCurrentProtocolVersion >= LastCompatibleProtocolVersion) return CheckVersionResult.Compatible;
+            // Версии не совместимы
+            else return CheckVersionResult.UnCompatible;
+        }
 
         public CanProg(CanFlow Flow)
         {
@@ -144,33 +177,32 @@ namespace Fudp
         /// <returns></returns>
         public static CanProg Connect(CanFlow Flow, DeviceTicket device)
         {
-            CanProg CP = new CanProg(Flow)
-            {
-                Device = device
-            };
-            ProgInit Init = new ProgInit(device);
+            CanProg res = new CanProg(Flow) { Device = device };
             int i = 0;
             while(true)
             {
-                
                 if (i == 10)
                 {
                     throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 }
                 Flow.Clear();
-                SendMsg(Flow, Init, 100, WithTransmitDescriptior: FuInit);
+                SendMsg(Flow, new ProgInit(device), 100, WithTransmitDescriptior: FuInit);
                 i++;
                 try
                 {
-                    var xxx = GetMsg<ProgStatus>(CP.Flow, 1000);
-                    CP.Properties = xxx.Properties;
-                    //CP.Properties = GetMsg<ProgStatus>(CP.Flow, CP.Device, 100).Properties;
+                    var xxx = GetMsg<ProgStatus>(res.Flow, 1000);
+                    res.Properties = xxx.Properties;
                     break;
                 }
                 catch (TimeoutException) { }
                 catch (IsoTpProtocolException) { }
             }
-            return CP;
+
+            // Проверка версии
+            if (res.CheckProtocolVersion() == CheckVersionResult.UnCompatible)
+                throw new CanProgUnCompatibleVersionException();
+
+            return res;
         }
 
         /// <summary>
