@@ -57,7 +57,7 @@ namespace Fudp.Messages
                 System.Reflection.Assembly.GetAssembly(typeof(Message))
                     .GetTypes()
                     .Where(T => T.IsSubclassOf(typeof(Message)))
-                    .ToDictionary(T => GetIdentifer(T));
+                    .ToDictionary(GetIdentifer);
         }
     }
 }

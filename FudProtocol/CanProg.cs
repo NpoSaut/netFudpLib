@@ -17,8 +17,8 @@ namespace Fudp
     /// </summary>
     public class CanProg : IDisposable
     {
-        public const int CurrentProtocolVersion = 1;
-        public const int LastCompatibleProtocolVersion = 1;
+        public const int CurrentProtocolVersion = 2;
+        public const int LastCompatibleProtocolVersion = 2;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
 
@@ -84,7 +84,7 @@ namespace Fudp
         public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuProg, UInt16 WithAcknowlegmentDescriptior = FuDev)
         {
 #if DEBUG
-            Logs.PushFormatTextEvent("--> Отправляем {0}", msg);
+            Logs.PushFormatTextEvent("--> {0}", msg);
 #endif
             flow.Clear();
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
@@ -143,17 +143,26 @@ namespace Fudp
         public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
             where MT : Message
         {
-#if DEBUG
-            Logs.PushFormatTextEvent("<-- Ожидаем сообщения {0}", typeof(MT));
-#endif
             DateTime startDt = DateTime.Now;
             while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
             {
                 var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, TimeSpan.FromMilliseconds(TimeOut));
                 var mes = Message.DecodeMessage(tr.Data);
-                var Tmes = mes as MT;
-                if (Tmes != null) return Tmes;
-                else Console.WriteLine("#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}", typeof(MT).Name, mes.GetType().Name, mes.ToString());
+                var typedMes = mes as MT;
+                if (typedMes != null)
+                {
+#if DEBUG
+                    Logs.PushFormatTextEvent("<-- {0}", typeof (MT));
+#endif
+                    return typedMes;
+                }
+                else
+                {
+#if DEBUG
+                    Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes.GetType(), typeof(MT));
+#endif
+                    Console.WriteLine("#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}", typeof(MT).Name, mes.GetType().Name, mes.ToString());
+                }
             }
             throw new TimeoutException("Не получено требуемого сообщения за указанное время");
         }
@@ -296,7 +305,7 @@ namespace Fudp
             while (pointer < fileInfo.FileSize)
             {
                 pointer += Write(fileInfo, pointer);
-                System.Threading.Thread.Sleep(100);     // TODO: плохо, плохо... ПОЧЕМУ????
+                //System.Threading.Thread.Sleep(100);     // TODO: плохо, плохо... ПОЧЕМУ????
 
                 if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
             }
@@ -305,7 +314,10 @@ namespace Fudp
         private int Write(DevFileInfo fileInfo, int offset)
         {
             ProgWrite WriteMessage = new ProgWrite(fileInfo, offset);
-            SendMsg(Flow, WriteMessage);
+
+            var result = Request<ProgWriteAck>(Flow, WriteMessage);
+            if (result.Status != ProgWriteAck.WriteStatusKind.OK)
+                throw new CanProgWriteException(result.Status);
 
             return WriteMessage.Data.Length;
         }
@@ -346,8 +358,16 @@ namespace Fudp
         /// </summary>
         public void Dispose()
         {
-            SendMsg(Flow, new ProgSubmit());
+            Submit();
             if (DisposeFlowOnExit) Flow.Dispose();
+        }
+
+        /// <summary>
+        /// Отправляет запрос на завершение сеанса программирования
+        /// </summary>
+        private void Submit()
+        {
+            Request<ProgSubmitAck>(Flow, new ProgSubmit());
         }
     }
 }

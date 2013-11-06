@@ -52,6 +52,7 @@
     <Compile Include="Exceptions\CanProgFileopException.cs" />
     <Compile Include="Exceptions\CanProgTransportException.cs" />
     <Compile Include="Exceptions\CanProgUnCompatibleVersionException.cs" />
+    <Compile Include="Exceptions\CanProgWriteException.cs" />
     <Compile Include="Exceptions\FudpException.cs" />
     <Compile Include="Exceptions\FudpIdentiferMismatchException.cs" />
     <Compile Include="Exceptions\CanProgLimitConnectExcepion.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Messages\ParamRmRq.cs" />
     <Compile Include="Messages\ParamSetAck.cs" />
     <Compile Include="Messages\ParamSetRq.cs" />
+    <Compile Include="Messages\ProgBCastResponse.cs" />
     <Compile Include="Messages\ProgChecksumError.cs" />
     <Compile Include="Messages\ProgSubmit.cs" />
     <Compile Include="Messages\ProgCreateAck.cs" />
@@ -83,7 +85,9 @@
     <Compile Include="Messages\ProgReadRq.cs" />
     <Compile Include="Messages\ProgRmAck.cs" />
     <Compile Include="Messages\ProgStatus.cs" />
+    <Compile Include="Messages\ProgSubmitAck.cs" />
     <Compile Include="Messages\ProgWrite.cs" />
+    <Compile Include="Messages\ProgWriteAck.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CanProg.cs" />
   </ItemGroup>
