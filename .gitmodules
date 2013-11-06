@@ -1,3 +1,6 @@
 [submodule "Can"]
 	path = Can
 	url = https://github.com/NpoSaut/netCanLib.git
+[submodule "!doc"]
+	path = !doc
+	url = https://github.com/NpoSaut/docCanProg.git
