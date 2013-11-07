@@ -6,6 +6,7 @@ using System.IO;
 using Communications.Appi;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
+using Communications.Protocols.IsoTP.Exceptions;
 using Fudp.Messages;
 using Fudp.Exceptions;
 
@@ -83,29 +84,23 @@ namespace Fudp
         /// <param name="Data">Отправляемые данные</param>
         public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuProg, UInt16 WithAcknowlegmentDescriptior = FuDev)
         {
-#if DEBUG
-            Logs.PushFormatTextEvent("--> {0}", msg);
-#endif
             flow.Clear();
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
             {
+#if DEBUG
+                Logs.PushFormatTextEvent("--> {0}", msg);
+#endif
                 try
                 {
                     flow.Clear();
                     IsoTp.Send(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
                     break;
                 }
-                catch(IsoTpTransactionAbortedException AbortException)
+                catch(IsoTpProtocolException istoProtocolException)
                 {
-                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", AbortException.Message);
+                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", istoProtocolException.Message);
                     System.Threading.Thread.Sleep(1000);
-                    if (attempt >= MaxAttempts-1) throw new CanProgTransportException(AbortException);
-                }
-                catch (TimeoutException TimeoutException)
-                {
-                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", TimeoutException.Message);
-                    System.Threading.Thread.Sleep(1000);
-                    if (attempt >= MaxAttempts - 1) throw new CanProgTransportException(TimeoutException);
+                    if (attempt >= MaxAttempts-1) throw new CanProgTransportException(istoProtocolException);
                 }
             }
         }
@@ -121,8 +116,8 @@ namespace Fudp
                     SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptior, TheirSideDescriptior);
                     return GetMsg<AnswerType>(flow, TimeOut, TheirSideDescriptior, ThisSideDescriptior);
                 }
-                catch (IsoTpTransactionAbortedException ex) { LastException = ex; }
-                catch (TimeoutException ex) { LastException = ex; }
+                catch (IsoTpProtocolException ex) { LastException = ex; }
+                catch (FudpReceiveTimeoutException ex) { LastException = ex; }
                 System.Threading.Thread.Sleep(1000);
             }
             Logs.PushFormatTextEvent("Исключение во время передачи: {0}", LastException);
@@ -146,25 +141,33 @@ namespace Fudp
             DateTime startDt = DateTime.Now;
             while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
             {
-                var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, TimeSpan.FromMilliseconds(TimeOut));
-                var mes = Message.DecodeMessage(tr.Data);
-                var typedMes = mes as MT;
-                if (typedMes != null)
+                try
                 {
+                    var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior,
+                        TimeSpan.FromMilliseconds(TimeOut));
+                    var mes = Message.DecodeMessage(tr.Data);
+                    var typedMes = mes as MT;
+                    if (typedMes != null)
+                    {
 #if DEBUG
-                    Logs.PushFormatTextEvent("<-- {0}", typeof (MT));
+                        Logs.PushFormatTextEvent("<-- {0}", typedMes);
 #endif
-                    return typedMes;
-                }
-                else
-                {
+                        return typedMes;
+                    }
+                    else
+                    {
 #if DEBUG
-                    Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes.GetType(), typeof(MT));
+                        Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes, typeof (MT));
 #endif
-                    Console.WriteLine("#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}", typeof(MT).Name, mes.GetType().Name, mes.ToString());
+                        Console.WriteLine(
+                            "#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}",
+                            typeof (MT).Name, mes.GetType().Name, mes);
+                    }
                 }
+                catch (IsoTpProtocolException timeoutException) { }
+                //{ throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)), timeoutException); }
             }
-            throw new TimeoutException("Не получено требуемого сообщения за указанное время");
+            throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
         }
         /// <summary>
         /// Устанавливает соединение
@@ -203,7 +206,6 @@ namespace Fudp
                     res.Properties = xxx.Properties;
                     break;
                 }
-                catch (TimeoutException) { }
                 catch (IsoTpProtocolException) { }
             }
 

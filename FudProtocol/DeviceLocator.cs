@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
+using Communications.Protocols.IsoTP.Exceptions;
 
 namespace Fudp
 {
@@ -54,7 +55,7 @@ namespace Fudp
                         var msg = Messages.Message.DecodeMessage(tr.Data);
                         if (msg is Messages.ProgBCastResponse) res.Add((msg as Messages.ProgBCastResponse).Ticket);
                     }
-                    catch (TimeoutException)
+                    catch (IsoTpReceiveTimeoutException)
                     {
                         break;
                     }

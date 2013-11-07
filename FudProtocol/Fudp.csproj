@@ -59,6 +59,7 @@
     <Compile Include="Exceptions\CanProgReadException.cs" />
     <Compile Include="DevFileInfo.cs" />
     <Compile Include="DeviceTicket.cs" />
+    <Compile Include="Exceptions\FudpReceiveTimeoutException.cs" />
     <Compile Include="Exceptions\FudpUnknownIdentiferExceptoin.cs" />
     <Compile Include="FudpCrc.cs" />
     <Compile Include="FudpFileStream.cs" />
