@@ -207,6 +207,7 @@ namespace Fudp
                     break;
                 }
                 catch (IsoTpProtocolException) { }
+                catch (FudpReceiveTimeoutException) { }
             }
 
             // Проверка версии

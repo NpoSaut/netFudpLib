@@ -50,5 +50,10 @@ namespace Fudp.Messages
                     BlockSerialNumber = ((Data[4] & 0x0f) << 16) | (Data[5] << 8) | Data[6]
                 };
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} {1}", base.ToString(), Ticket);
+        }
     }
 }
