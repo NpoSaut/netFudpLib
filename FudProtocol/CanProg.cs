@@ -308,7 +308,6 @@ namespace Fudp
             while (pointer < fileInfo.FileSize)
             {
                 pointer += Write(fileInfo, pointer);
-                //System.Threading.Thread.Sleep(100);     // TODO: плохо, плохо... ПОЧЕМУ????
 
                 if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
             }
