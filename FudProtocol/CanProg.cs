@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using Communications.Appi;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
 using Communications.Protocols.IsoTP.Exceptions;
