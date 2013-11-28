@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Threading;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
 using Communications.Protocols.IsoTP.Exceptions;
@@ -17,12 +18,12 @@ namespace Fudp
     /// </summary>
     public class CanProg : IDisposable
     {
-        public const int CurrentProtocolVersion = 2;
+        public const int CurrentProtocolVersion = 3;
         public const int LastCompatibleProtocolVersion = 2;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
 
-        private bool DisposeFlowOnExit = false;
+        private bool _disposeFlowOnExit = false;
         public static IList<ICanProgLog> Logs { get; set; }
 
         public enum CheckVersionResult
@@ -57,6 +58,7 @@ namespace Fudp
         {
             this.Flow = Flow;
             Properties = new Dictionary<int, int>();
+            SubmitAction = SubmitStatus.Submit;
         }
 
         public const UInt16 FuInit = 0xfc08;
@@ -78,10 +80,12 @@ namespace Fudp
         /// <summary>
         /// Отправляет сообщение
         /// </summary>
-        /// <param name="flow">CAN порт</param>
-        /// <param name="device">Класс содержащий параметры системы и блока</param>
-        /// <param name="Data">Отправляемые данные</param>
-        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuProg, UInt16 WithAcknowlegmentDescriptior = FuDev)
+        /// <param name="flow">CAN-поток</param>
+        /// <param name="msg">Отправляемое сообщение</param>
+        /// <param name="TimeOut">Таймаут на ожидание ответа</param>
+        /// <param name="WithTransmitDescriptor">Дескриптор, с которым передаётся сообщение</param>
+        /// <param name="WithAcknowledgmentDescriptor">Дескриптор, с которым передаются подтверждения на сообщение</param>
+        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev)
         {
             flow.Clear();
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
@@ -92,7 +96,7 @@ namespace Fudp
                 try
                 {
                     flow.Clear();
-                    IsoTp.Send(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
+                    IsoTp.Send(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
                     break;
                 }
                 catch(IsoTpProtocolException istoProtocolException)
@@ -104,7 +108,7 @@ namespace Fudp
             }
         }
 
-        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptior = FuProg, UInt16 TheirSideDescriptior = FuDev)
+        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev)
             where AnswerType : Message
         {
             Exception LastException = null;
@@ -112,8 +116,8 @@ namespace Fudp
             {
                 try
                 {
-                    SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptior, TheirSideDescriptior);
-                    return GetMsg<AnswerType>(flow, TimeOut, TheirSideDescriptior, ThisSideDescriptior);
+                    SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor);
+                    return GetMsg<AnswerType>(flow, TimeOut, TheirSideDescriptor, ThisSideDescriptor);
                 }
                 catch (IsoTpProtocolException ex) { LastException = ex; }
                 catch (FudpReceiveTimeoutException ex) { LastException = ex; }
@@ -123,18 +127,12 @@ namespace Fudp
             throw new CanProgTransportException(LastException);
         }
 
-        /// <summary>
-        /// Получает ответ от устройства
-        /// </summary>
-        /// <param name="flow">CAN порт</param>
-        /// <param name="device">Класс содержащий параметры системы и блока</param>
-        /// <returns>Принятые данные</returns>
-        public static Message GetMsg(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
+        public static Message GetMsg(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
         {
-            var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior, TimeSpan.FromMilliseconds(TimeOut));
+            var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptior = FuDev, UInt16 WithAcknowlegmentDescriptior = FuProg)
+        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
             where MT : Message
         {
             DateTime startDt = DateTime.Now;
@@ -142,7 +140,7 @@ namespace Fudp
             {
                 try
                 {
-                    var tr = IsoTp.Receive(flow, WithTransmitDescriptior, WithAcknowlegmentDescriptior,
+                    var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
                         TimeSpan.FromMilliseconds(TimeOut));
                     var mes = Message.DecodeMessage(tr.Data);
                     var typedMes = mes as MT;
@@ -177,7 +175,7 @@ namespace Fudp
         public static CanProg Connect(CanPort Port, DeviceTicket device)
         {
             var session = Connect(new CanFlow(Port, FuDev, FuInit, FuProg), device);
-            session.DisposeFlowOnExit = true;
+            session._disposeFlowOnExit = true;
             return session;
         }
         /// <summary>
@@ -197,7 +195,7 @@ namespace Fudp
                     throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 }
                 Flow.Clear();
-                SendMsg(Flow, new ProgInit(device), 100, WithTransmitDescriptior: FuInit);
+                SendMsg(Flow, new ProgInit(device), 100, WithTransmitDescriptor: FuInit);
                 i++;
                 try
                 {
@@ -277,35 +275,40 @@ namespace Fudp
             ProgMrPropper MrPropper = new ProgMrPropper();
             SendMsg(Flow, MrPropper);
         }
+
         /// <summary>
         /// Команда на создание файла
         /// </summary>
+        /// <param name="fileInfo"></param>
+        /// <param name="ProgressAcceptor"></param>
+        /// <param name="CancelToken"></param>
         /// <param name="fileName">Имя файла</param>
         /// <param name="Data">Данные</param>
         /// <returns></returns>
-        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null)
+        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
-            ProgCreate Create = new ProgCreate()
+            var create = new ProgCreate()
             {
                 FileName = fileInfo.FileName,
                 FileSize = fileInfo.FileSize,
                 CRC = FudpCrc.CalcCrc(fileInfo.Data)
             };
 
-            ProgCreateAck CreateAck = Request<ProgCreateAck>(Flow, Create);
-            if (CreateAck.ErrorCode != 0)
-                switch (CreateAck.ErrorCode)
+            var createAck = Request<ProgCreateAck>(Flow, create);
+            if (createAck.ErrorCode != 0)
+                switch (createAck.ErrorCode)
                 {
-                    case 1: throw new CanProgFileAlreadyExistsException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
-                    case 2: throw new CanProgMaximumFilesCountAchivedException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
-                    case 3: throw new CanProgMemoryIsOutException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
-                    case 4: throw new CanProgCreateException(CreateAck.ErrorMsg[CreateAck.ErrorCode]);
+                    case 1: throw new CanProgFileAlreadyExistsException(createAck.ErrorMsg[createAck.ErrorCode]);
+                    case 2: throw new CanProgMaximumFilesCountAchivedException(createAck.ErrorMsg[createAck.ErrorCode]);
+                    case 3: throw new CanProgMemoryIsOutException(createAck.ErrorMsg[createAck.ErrorCode]);
+                    case 4: throw new CanProgCreateException(createAck.ErrorMsg[createAck.ErrorCode]);
                     default: throw new CanProgException();
                 }
 
             int pointer = 0;
             while (pointer < fileInfo.FileSize)
             {
+                CancelToken.ThrowIfCancellationRequested();
                 pointer += Write(fileInfo, pointer);
 
                 if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
@@ -354,21 +357,25 @@ namespace Fudp
             else
                 throw new CanProgCreateException(pra.ErrorMsg[pra.ErrorCode]);
         }
+
+        public SubmitStatus SubmitAction { get; set; }
+        private bool _submited = false;
         /// <summary>
         /// Разрыв соединения
         /// </summary>
         public void Dispose()
         {
-            Submit();
-            if (DisposeFlowOnExit) Flow.Dispose();
+            if (!_submited) Submit(SubmitAction);
+            if (_disposeFlowOnExit) Flow.Dispose();
         }
 
         /// <summary>
         /// Отправляет запрос на завершение сеанса программирования
         /// </summary>
-        private void Submit()
+        private void Submit(SubmitStatus Status)
         {
-            Request<ProgSubmitAck>(Flow, new ProgSubmit());
+            Request<ProgSubmitAck>(Flow, new ProgSubmit(Status));
+            _submited = true;
         }
     }
 }
