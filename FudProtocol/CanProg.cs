@@ -18,8 +18,8 @@ namespace Fudp
     /// </summary>
     public class CanProg : IDisposable
     {
-        public const int CurrentProtocolVersion = 3;
-        public const int LastCompatibleProtocolVersion = 2;
+        public const int CurrentProtocolVersion = 4;
+        public const int LastCompatibleProtocolVersion = 4;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
 
@@ -29,7 +29,7 @@ namespace Fudp
         public enum CheckVersionResult
         {
             /// <summary>Версии идентичны</summary>
-            Equails,
+            Equals,
             /// <summary>Версии совместимы</summary>
             Compatible,
             /// <summary>Версии не совместимы</summary>
@@ -45,7 +45,7 @@ namespace Fudp
             int deviceLastCompatibleProtocolVersion = Properties.ContainsKey(LastCompatibleProtocolVersionKey) ? Properties[LastCompatibleProtocolVersionKey] : 1;
 
             // Версии протокола идентичны
-            if (deviceCurrentProtocolVersion == CurrentProtocolVersion) return CheckVersionResult.Equails;
+            if (deviceCurrentProtocolVersion == CurrentProtocolVersion) return CheckVersionResult.Equals;
             // Версия программатора устарела, но является совместимой с версией загрузчика
             else if (CurrentProtocolVersion < deviceCurrentProtocolVersion && CurrentProtocolVersion >= deviceLastCompatibleProtocolVersion) return CheckVersionResult.Compatible;
             // Версия загрузчика устарела, но является совместимой с версией программатора
@@ -61,9 +61,9 @@ namespace Fudp
             SubmitAction = SubmitStatus.Submit;
         }
 
-        public const UInt16 FuInit = 0xfc08;
-        public const UInt16 FuProg = 0xfc28;
-        public const UInt16 FuDev =  0xfc48;
+        public const UInt16 FuInit = 0x66a8;
+        public const UInt16 FuProg = 0x66c8;
+        public const UInt16 FuDev =  0x66e8;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>
