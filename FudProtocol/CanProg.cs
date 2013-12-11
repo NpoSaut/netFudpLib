@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.IO;
@@ -58,7 +59,7 @@ namespace Fudp
         {
             this.Flow = Flow;
             Properties = new Dictionary<int, int>();
-            SubmitAction = SubmitStatus.Submit;
+            SubmitAction = SubmitStatus.Cancel;
         }
 
         public const UInt16 FuInit = 0x66a8;
@@ -135,13 +136,14 @@ namespace Fudp
         public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
             where MT : Message
         {
-            DateTime startDt = DateTime.Now;
-            while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
+            var sw = new Stopwatch();
+            sw.Start();
+            while (sw.ElapsedMilliseconds < TimeOut)
             {
                 try
                 {
                     var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
-                        TimeSpan.FromMilliseconds(TimeOut));
+                        TimeSpan.FromMilliseconds(TimeOut - sw.ElapsedMilliseconds));
                     var mes = Message.DecodeMessage(tr.Data);
                     var typedMes = mes as MT;
                     if (typedMes != null)
@@ -156,12 +158,9 @@ namespace Fudp
 #if DEBUG
                         Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes, typeof (MT));
 #endif
-                        Console.WriteLine(
-                            "#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}",
-                            typeof (MT).Name, mes.GetType().Name, mes);
                     }
                 }
-                catch (IsoTpProtocolException timeoutException) { }
+                catch (IsoTpProtocolException) { }
                 //{ throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)), timeoutException); }
             }
             throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
@@ -186,20 +185,24 @@ namespace Fudp
         /// <returns></returns>
         public static CanProg Connect(CanFlow Flow, DeviceTicket device)
         {
-            CanProg res = new CanProg(Flow) { Device = device };
+            Logs.PushFormatTextEvent("Пробуем подключиться к {0}", device);
+            var res = new CanProg(Flow) { Device = device };
             int i = 0;
             while(true)
             {
-                if (i == 10)
-                {
-                    throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
-                }
+                Logs.PushFormatTextEvent("Попытка {0}", i+1);
+                if (i >= 10) throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
+                
                 Flow.Clear();
+
+                Logs.PushFormatTextEvent("Отправляем ProgInit");
                 SendMsg(Flow, new ProgInit(device), 100, WithTransmitDescriptor: FuInit);
                 i++;
                 try
                 {
-                    var xxx = GetMsg<ProgStatus>(res.Flow, 1000);
+                    Logs.PushFormatTextEvent("Ждём ответа на ProgInit");
+                    var xxx = GetMsg<ProgStatus>(res.Flow, 100);
+                    Logs.PushFormatTextEvent("Получили ответ на ProgInit");
                     res.Properties = xxx.Properties;
                     break;
                 }
@@ -372,7 +375,7 @@ namespace Fudp
         /// <summary>
         /// Отправляет запрос на завершение сеанса программирования
         /// </summary>
-        private void Submit(SubmitStatus Status)
+        public void Submit(SubmitStatus Status)
         {
             Request<ProgSubmitAck>(Flow, new ProgSubmit(Status));
             _submited = true;
