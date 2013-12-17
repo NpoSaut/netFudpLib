@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Threading;
+using Communications;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
 using Communications.Protocols.IsoTP.Exceptions;
@@ -54,9 +55,9 @@ namespace Fudp
             else return CheckVersionResult.UnCompatible;
         }
 
-        public CanProg(CanFlow Flow)
+        public CanProg(ICanSocket Socket)
         {
-            this.Flow = Flow;
+            this.Socket = Socket;
             Properties = new Dictionary<int, int>();
             SubmitAction = SubmitStatus.Submit;
         }
@@ -71,7 +72,7 @@ namespace Fudp
         /// <summary>
         /// Порт
         /// </summary>
-        public CanFlow Flow { get; private set; }
+        public ICanSocket Socket { get; private set; }
 
         public DeviceTicket Device { get; private set; }
         
@@ -85,9 +86,8 @@ namespace Fudp
         /// <param name="TimeOut">Таймаут на ожидание ответа</param>
         /// <param name="WithTransmitDescriptor">Дескриптор, с которым передаётся сообщение</param>
         /// <param name="WithAcknowledgmentDescriptor">Дескриптор, с которым передаются подтверждения на сообщение</param>
-        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev)
+        public static void SendMsg(ICanSocket Socket, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev)
         {
-            flow.Clear();
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
             {
 #if DEBUG
@@ -95,8 +95,7 @@ namespace Fudp
 #endif
                 try
                 {
-                    flow.Clear();
-                    IsoTp.Send(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
+                    IsoTp.Send(Socket, WithTransmitDescriptor, WithAcknowledgmentDescriptor, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
                     break;
                 }
                 catch(IsoTpProtocolException istoProtocolException)
@@ -108,7 +107,7 @@ namespace Fudp
             }
         }
 
-        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev)
+        public static AnswerType Request<AnswerType>(ICanSocket Socket, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev)
             where AnswerType : Message
         {
             Exception LastException = null;
@@ -116,8 +115,8 @@ namespace Fudp
             {
                 try
                 {
-                    SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor);
-                    return GetMsg<AnswerType>(flow, TimeOut, TheirSideDescriptor, ThisSideDescriptor);
+                    SendMsg(Socket, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor);
+                    return GetMsg<AnswerType>(Socket, TimeOut, TheirSideDescriptor, ThisSideDescriptor);
                 }
                 catch (IsoTpProtocolException ex) { LastException = ex; }
                 catch (FudpReceiveTimeoutException ex) { LastException = ex; }
@@ -127,12 +126,12 @@ namespace Fudp
             throw new CanProgTransportException(LastException);
         }
 
-        public static Message GetMsg(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static Message GetMsg(ICanSocket Socket, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
         {
-            var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
+            var tr = IsoTp.Receive(Socket, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static MT GetMsg<MT>(ICanSocket Socket, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
             where MT : Message
         {
             DateTime startDt = DateTime.Now;
@@ -140,7 +139,7 @@ namespace Fudp
             {
                 try
                 {
-                    var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
+                    var tr = IsoTp.Receive(Socket, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
                         TimeSpan.FromMilliseconds(TimeOut));
                     var mes = Message.DecodeMessage(tr.Data);
                     var typedMes = mes as MT;
@@ -164,17 +163,18 @@ namespace Fudp
                 catch (IsoTpProtocolException timeoutException) { }
                 //{ throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)), timeoutException); }
             }
-            throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
+            throw new FudpReceiveTimeoutException(string.Format("Превышено время ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
         }
+
         /// <summary>
         /// Устанавливает соединение
         /// </summary>
-        /// <param name="Flow">Can-порт</param>
+        /// <param name="SocketSource">Устройство для открытия CAN-сокетов</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
-        public static CanProg Connect(CanPort Port, DeviceTicket device)
+        public static CanProg Connect(ICanSocketSource SocketSource, DeviceTicket device)
         {
-            var session = Connect(new CanFlow(Port, FuDev, FuInit, FuProg), device);
+            var session = Connect(SocketSource.OpenSocket(FuInit, FuProg, FuDev), device);
             session._disposeFlowOnExit = true;
             return session;
         }
@@ -184,9 +184,9 @@ namespace Fudp
         /// <param name="Flow">Пото Can-сообщений</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
-        public static CanProg Connect(CanFlow Flow, DeviceTicket device)
+        public static CanProg Connect(ICanSocket Socket, DeviceTicket device)
         {
-            CanProg res = new CanProg(Flow) { Device = device };
+            var res = new CanProg(Socket) { Device = device };
             int i = 0;
             while(true)
             {
@@ -194,12 +194,11 @@ namespace Fudp
                 {
                     throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 }
-                Flow.Clear();
-                SendMsg(Flow, new ProgInit(device), 100, WithTransmitDescriptor: FuInit);
+                SendMsg(Socket, new ProgInit(device), 100, WithTransmitDescriptor: FuInit);
                 i++;
                 try
                 {
-                    var xxx = GetMsg<ProgStatus>(res.Flow, 1000);
+                    var xxx = GetMsg<ProgStatus>(res.Socket, 1000);
                     res.Properties = xxx.Properties;
                     break;
                 }
@@ -221,7 +220,7 @@ namespace Fudp
         public List<DevFileInfo> ListFiles()
         {
             ProgListRq ListRq = new ProgListRq();
-            return Request<ProgList>(Flow, ListRq).ListDevFileInfo;
+            return Request<ProgList>(Socket, ListRq).ListDevFileInfo;
         }
         /// <summary>
         /// Запрос на чтение
@@ -239,9 +238,9 @@ namespace Fudp
 
             while (ReadRq.FileSize > 0)
             {
-                Request<ProgRead>(Flow, ReadRq);
+                Request<ProgRead>(Socket, ReadRq);
                 
-                ProgRead Read = (ProgRead)GetMsg(Flow);
+                ProgRead Read = (ProgRead)GetMsg(Socket);
                 if (Read.ErrorCode != 0)
                     switch (Read.ErrorCode)
                     {
@@ -265,7 +264,7 @@ namespace Fudp
             {
                 FileName = FileName
             };
-            return Request<ProgRmAck>(Flow, Rm).ErrorCode;
+            return Request<ProgRmAck>(Socket, Rm).ErrorCode;
         }
         /// <summary>
         /// Команда на очистку памяти
@@ -273,7 +272,7 @@ namespace Fudp
         public void Erase()
         {
             ProgMrPropper MrPropper = new ProgMrPropper();
-            SendMsg(Flow, MrPropper);
+            SendMsg(Socket, MrPropper);
         }
 
         /// <summary>
@@ -294,7 +293,7 @@ namespace Fudp
                 CRC = FudpCrc.CalcCrc(fileInfo.Data)
             };
 
-            var createAck = Request<ProgCreateAck>(Flow, create);
+            var createAck = Request<ProgCreateAck>(Socket, create);
             if (createAck.ErrorCode != 0)
                 switch (createAck.ErrorCode)
                 {
@@ -319,7 +318,7 @@ namespace Fudp
         {
             ProgWrite WriteMessage = new ProgWrite(fileInfo, offset);
 
-            var result = Request<ProgWriteAck>(Flow, WriteMessage);
+            var result = Request<ProgWriteAck>(Socket, WriteMessage);
             if (result.Status != ProgWriteAck.WriteStatusKind.OK)
                 throw new CanProgWriteException(result.Status);
 
@@ -337,7 +336,7 @@ namespace Fudp
                 ParamKey = paramKey,
                 ParamVlue = paramValue
             };
-            ParamSetAck psa = Request<ParamSetAck>(Flow, psr);
+            ParamSetAck psa = Request<ParamSetAck>(Socket, psr);
             if (psa.ErrorCode != 0)
                 throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
         }
@@ -351,7 +350,7 @@ namespace Fudp
             {
                 ParamKey = paramKey
             };
-            ParamRmAck pra = Request<ParamRmAck>(Flow, prr);
+            ParamRmAck pra = Request<ParamRmAck>(Socket, prr);
             if (pra.ErrorCode == 0)
                 Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
             else
@@ -366,7 +365,7 @@ namespace Fudp
         public void Dispose()
         {
             if (!_submited) Submit(SubmitAction);
-            if (_disposeFlowOnExit) Flow.Dispose();
+            if (_disposeFlowOnExit) Socket.Dispose();
         }
 
         /// <summary>
@@ -374,7 +373,7 @@ namespace Fudp
         /// </summary>
         private void Submit(SubmitStatus Status)
         {
-            Request<ProgSubmitAck>(Flow, new ProgSubmit(Status));
+            Request<ProgSubmitAck>(Socket, new ProgSubmit(Status));
             _submited = true;
         }
     }
