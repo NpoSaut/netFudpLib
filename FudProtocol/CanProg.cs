@@ -75,8 +75,9 @@ namespace Fudp
         public CanFlow Flow { get; private set; }
 
         public DeviceTicket Device { get; private set; }
-        
-        const int MaxAttempts = 20;
+
+        const int MaxAttempts = 7;
+        private const int DefaultIsoTpTimeoutMs = 300;
 
         /// <summary>
         /// Отправляет сообщение
@@ -86,7 +87,7 @@ namespace Fudp
         /// <param name="TimeOut">Таймаут на ожидание ответа</param>
         /// <param name="WithTransmitDescriptor">Дескриптор, с которым передаётся сообщение</param>
         /// <param name="WithAcknowledgmentDescriptor">Дескриптор, с которым передаются подтверждения на сообщение</param>
-        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev)
+        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev)
         {
             flow.Clear();
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
@@ -103,13 +104,13 @@ namespace Fudp
                 catch(IsoTpProtocolException istoProtocolException)
                 {
                     Logs.PushFormatTextEvent("Исключение во время передачи: {0}", istoProtocolException.Message);
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(200);
                     if (attempt >= MaxAttempts-1) throw new CanProgTransportException(istoProtocolException);
                 }
             }
         }
 
-        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev)
+        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev)
             where AnswerType : Message
         {
             Exception LastException = null;
@@ -122,18 +123,18 @@ namespace Fudp
                 }
                 catch (IsoTpProtocolException ex) { LastException = ex; }
                 catch (FudpReceiveTimeoutException ex) { LastException = ex; }
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(200);
             }
             Logs.PushFormatTextEvent("Исключение во время передачи: {0}", LastException);
             throw new CanProgTransportException(LastException);
         }
 
-        public static Message GetMsg(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static Message GetMsg(CanFlow flow, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
         {
             var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
             where MT : Message
         {
             var sw = new Stopwatch();
@@ -363,6 +364,7 @@ namespace Fudp
 
         public SubmitStatus SubmitAction { get; set; }
         private bool _submited = false;
+
         /// <summary>
         /// Разрыв соединения
         /// </summary>
@@ -377,7 +379,8 @@ namespace Fudp
         /// </summary>
         public void Submit(SubmitStatus Status)
         {
-            Request<ProgSubmitAck>(Flow, new ProgSubmit(Status));
+            var submitMessage = new ProgSubmit(Status);
+            Request<ProgSubmitAck>(Flow, submitMessage);
             _submited = true;
         }
     }
