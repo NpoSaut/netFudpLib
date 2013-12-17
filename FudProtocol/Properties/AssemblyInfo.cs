@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
 [assembly: AssemblyTitle("Fudp")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Реализация протокола FUDP")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("UralSOFT")]
-[assembly: AssemblyProduct("Fudp")]
-[assembly: AssemblyCopyright("Copyright © UralSOFT 2013")]
+[assembly: AssemblyCompany("НПО САУТ")]
+[assembly: AssemblyProduct("CanProg")]
+[assembly: AssemblyCopyright("Copyright © НПО САУТ, 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // Можно задать все значения или принять номер построения и номер редакции по умолчанию, 
 // используя "*", как показано ниже:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("4.0.*")]
+[assembly: AssemblyFileVersion("4.0.0.0")]

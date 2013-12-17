@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Communications.Can;
@@ -22,7 +23,7 @@ namespace Fudp
         /// </summary>
         /// <param name="Template">Шаблон билета устройства</param>
         /// <param name="Timeout">Таймаут (в милисекундах). Таймаут отсчитывается с момента получения последней IsoTP-транзакции, а не с момента начала опроса</param>
-        public List<DeviceTicket> LocateDevices(DeviceTicket Template, int Timeout = 500)
+        public List<DeviceTicket> LocateDevices(DeviceTicket Template, int Timeout = 100)
         {
             return LocateDevices(Template, Socket, Timeout);
         }
@@ -31,10 +32,10 @@ namespace Fudp
         /// Находит в сети все устройства с заданным шаблоном билетов.
         /// </summary>
         /// <param name="Template">Шаблон билета устройства</param>
-        /// <param name="Socket">Can-порт, через который осуществляется работа</param>
+        /// <param name="Socket">Can-сокет, через который осуществляется работа</param>
         /// <param name="Timeout">Таймаут (в милисекундах). Таймаут отсчитывается с момента получения последней IsoTP-транзакции, а не с момента начала опроса</param>
         /// <returns></returns>
-        public static List<DeviceTicket> LocateDevices(DeviceTicket Template, ICanSocket Socket, int Timeout = 500)
+        public static List<DeviceTicket> LocateDevices(DeviceTicket Template, ICanSocket Socket, int Timeout = 100)
         {
             Template.BlockSerialNumber = 0;
 
@@ -42,11 +43,13 @@ namespace Fudp
             IsoTp.Send(Socket, CanProg.FuInit, CanProg.FuDev, helloMessage.Encode());
 
             var res = new List<DeviceTicket>();
-            while (true)
+            var sw = new Stopwatch();
+            sw.Start();
+            while (sw.ElapsedMilliseconds < Timeout)
             {
                 try
                 {
-                    var tr = IsoTp.Receive(Socket, CanProg.FuDev, CanProg.FuProg, TimeSpan.FromMilliseconds(Timeout));
+                    var tr = IsoTp.Receive(Socket, CanProg.FuDev, CanProg.FuProg, TimeSpan.FromMilliseconds(Timeout - sw.ElapsedMilliseconds));
                     var msg = Messages.Message.DecodeMessage(tr.Data);
                     if (msg is Messages.ProgBCastResponse) res.Add((msg as Messages.ProgBCastResponse).Ticket);
                 }

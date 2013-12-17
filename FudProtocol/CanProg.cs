@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.IO;
@@ -19,8 +20,8 @@ namespace Fudp
     /// </summary>
     public class CanProg : IDisposable
     {
-        public const int CurrentProtocolVersion = 3;
-        public const int LastCompatibleProtocolVersion = 2;
+        public const int CurrentProtocolVersion = 4;
+        public const int LastCompatibleProtocolVersion = 4;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
 
@@ -30,7 +31,7 @@ namespace Fudp
         public enum CheckVersionResult
         {
             /// <summary>Версии идентичны</summary>
-            Equails,
+            Equals,
             /// <summary>Версии совместимы</summary>
             Compatible,
             /// <summary>Версии не совместимы</summary>
@@ -46,7 +47,7 @@ namespace Fudp
             int deviceLastCompatibleProtocolVersion = Properties.ContainsKey(LastCompatibleProtocolVersionKey) ? Properties[LastCompatibleProtocolVersionKey] : 1;
 
             // Версии протокола идентичны
-            if (deviceCurrentProtocolVersion == CurrentProtocolVersion) return CheckVersionResult.Equails;
+            if (deviceCurrentProtocolVersion == CurrentProtocolVersion) return CheckVersionResult.Equals;
             // Версия программатора устарела, но является совместимой с версией загрузчика
             else if (CurrentProtocolVersion < deviceCurrentProtocolVersion && CurrentProtocolVersion >= deviceLastCompatibleProtocolVersion) return CheckVersionResult.Compatible;
             // Версия загрузчика устарела, но является совместимой с версией программатора
@@ -59,12 +60,12 @@ namespace Fudp
         {
             this.Socket = Socket;
             Properties = new Dictionary<int, int>();
-            SubmitAction = SubmitStatus.Submit;
+            SubmitAction = SubmitStatus.Cancel;
         }
 
-        public const UInt16 FuInit = 0xfc08;
-        public const UInt16 FuProg = 0xfc28;
-        public const UInt16 FuDev =  0xfc48;
+        public const UInt16 FuInit = 0x66a8;
+        public const UInt16 FuProg = 0x66c8;
+        public const UInt16 FuDev =  0x66e8;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>
@@ -75,8 +76,9 @@ namespace Fudp
         public ICanSocket Socket { get; private set; }
 
         public DeviceTicket Device { get; private set; }
-        
-        const int MaxAttempts = 20;
+
+        const int DefaultMaximumSendAttempts = 7;
+        private const int DefaultIsoTpTimeoutMs = 300;
 
         /// <summary>
         /// Отправляет сообщение
@@ -86,7 +88,7 @@ namespace Fudp
         /// <param name="TimeOut">Таймаут на ожидание ответа</param>
         /// <param name="WithTransmitDescriptor">Дескриптор, с которым передаётся сообщение</param>
         /// <param name="WithAcknowledgmentDescriptor">Дескриптор, с которым передаются подтверждения на сообщение</param>
-        public static void SendMsg(ICanSocket Socket, Message msg, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev)
+        public static void SendMsg(ICanSocket Socket, Message msg, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
         {
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
             {
@@ -101,13 +103,13 @@ namespace Fudp
                 catch(IsoTpProtocolException istoProtocolException)
                 {
                     Logs.PushFormatTextEvent("Исключение во время передачи: {0}", istoProtocolException.Message);
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(200);
                     if (attempt >= MaxAttempts-1) throw new CanProgTransportException(istoProtocolException);
                 }
             }
         }
 
-        public static AnswerType Request<AnswerType>(ICanSocket Socket, Message RequestMessage, int TimeOut = 2000, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev)
+        public static AnswerType Request<AnswerType>(ICanSocket Socket, Message RequestMessage, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
             where AnswerType : Message
         {
             Exception LastException = null;
@@ -115,32 +117,33 @@ namespace Fudp
             {
                 try
                 {
-                    SendMsg(Socket, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor);
+                    SendMsg(Socket, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor, MaxAttempts);
                     return GetMsg<AnswerType>(Socket, TimeOut, TheirSideDescriptor, ThisSideDescriptor);
                 }
                 catch (IsoTpProtocolException ex) { LastException = ex; }
                 catch (FudpReceiveTimeoutException ex) { LastException = ex; }
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(200);
             }
             Logs.PushFormatTextEvent("Исключение во время передачи: {0}", LastException);
             throw new CanProgTransportException(LastException);
         }
 
-        public static Message GetMsg(ICanSocket Socket, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static Message GetMsg(ICanSocket Socket, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
         {
             var tr = IsoTp.Receive(Socket, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(ICanSocket Socket, int TimeOut = 2000, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static MT GetMsg<MT>(ICanSocket Socket, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
             where MT : Message
         {
-            DateTime startDt = DateTime.Now;
-            while (startDt.AddMilliseconds(TimeOut) >= DateTime.Now)
+            var sw = new Stopwatch();
+            sw.Start();
+            while (sw.ElapsedMilliseconds < TimeOut)
             {
                 try
                 {
                     var tr = IsoTp.Receive(Socket, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
-                        TimeSpan.FromMilliseconds(TimeOut));
+                        TimeSpan.FromMilliseconds(TimeOut - sw.ElapsedMilliseconds));
                     var mes = Message.DecodeMessage(tr.Data);
                     var typedMes = mes as MT;
                     if (typedMes != null)
@@ -155,12 +158,9 @@ namespace Fudp
 #if DEBUG
                         Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes, typeof (MT));
 #endif
-                        Console.WriteLine(
-                            "#CanProg: был запрос на чтение сообщения {0}, вместо этого было прочитано сообщение {1} {{{2}}}",
-                            typeof (MT).Name, mes.GetType().Name, mes);
                     }
                 }
-                catch (IsoTpProtocolException timeoutException) { }
+                catch (IsoTpProtocolException) { }
                 //{ throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)), timeoutException); }
             }
             throw new FudpReceiveTimeoutException(string.Format("Превышено время ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
@@ -186,19 +186,22 @@ namespace Fudp
         /// <returns></returns>
         public static CanProg Connect(ICanSocket Socket, DeviceTicket device)
         {
+            Logs.PushFormatTextEvent("Пробуем подключиться к {0}", device);
             var res = new CanProg(Socket) { Device = device };
             int i = 0;
             while(true)
             {
-                if (i == 10)
-                {
-                    throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
-                }
+                Logs.PushFormatTextEvent("Попытка {0}", i+1);
+                if (i >= 10) throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
+                
+                Logs.PushFormatTextEvent("Отправляем ProgInit");
                 SendMsg(Socket, new ProgInit(device), 100, WithTransmitDescriptor: FuInit);
                 i++;
                 try
                 {
-                    var xxx = GetMsg<ProgStatus>(res.Socket, 1000);
+                    Logs.PushFormatTextEvent("Ждём ответа на ProgInit");
+                    var xxx = GetMsg<ProgStatus>(res.Socket, 100);
+                    Logs.PushFormatTextEvent("Получили ответ на ProgInit");
                     res.Properties = xxx.Properties;
                     break;
                 }
@@ -359,6 +362,7 @@ namespace Fudp
 
         public SubmitStatus SubmitAction { get; set; }
         private bool _submited = false;
+
         /// <summary>
         /// Разрыв соединения
         /// </summary>
@@ -371,9 +375,11 @@ namespace Fudp
         /// <summary>
         /// Отправляет запрос на завершение сеанса программирования
         /// </summary>
-        private void Submit(SubmitStatus Status)
+        public void Submit(SubmitStatus Status)
         {
-            Request<ProgSubmitAck>(Socket, new ProgSubmit(Status));
+            var submitMessage = new ProgSubmit(Status);
+            int sendAttempts = Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3;
+            Request<ProgSubmitAck>(Socket, submitMessage);
             _submited = true;
         }
     }
