@@ -169,7 +169,7 @@ namespace Fudp
         /// <summary>
         /// Устанавливает соединение
         /// </summary>
-        /// <param name="Flow">Can-порт</param>
+        /// <param name="Port">Can-порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
         public static CanProg Connect(CanPort Port, DeviceTicket device)
@@ -370,7 +370,16 @@ namespace Fudp
         /// </summary>
         public void Dispose()
         {
-            if (!_submited) Submit(SubmitAction);
+            if (!_submited)
+                try
+                {
+                    // TODO: Убедиться в безопасности Dispose()
+                    // Убедиться в том, что если Dispose() возникает из-за отключения АППИ, мы не зависнем на этом месте из-за того,
+                    // что будем долго пытаться отправить Submit();
+                    Submit(SubmitAction);
+                }
+                // ReSharper disable once EmptyGeneralCatchClause
+                catch { }
             if (_disposeFlowOnExit) Flow.Dispose();
         }
 
