@@ -77,7 +77,7 @@ namespace Fudp
         public DeviceTicket Device { get; private set; }
 
         const int DefaultMaximumSendAttempts = 7;
-        private const int DefaultIsoTpTimeoutMs = 300;
+        private const int DefaultFudpTimeout = 700;
 
         /// <summary>
         /// Отправляет сообщение
@@ -87,7 +87,7 @@ namespace Fudp
         /// <param name="TimeOut">Таймаут на ожидание ответа</param>
         /// <param name="WithTransmitDescriptor">Дескриптор, с которым передаётся сообщение</param>
         /// <param name="WithAcknowledgmentDescriptor">Дескриптор, с которым передаются подтверждения на сообщение</param>
-        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
+        public static void SendMsg(CanFlow flow, Message msg, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
         {
             flow.Clear();
             for (int attempt = 0; attempt < MaxAttempts; attempt ++)
@@ -110,7 +110,7 @@ namespace Fudp
             }
         }
 
-        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
+        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = DefaultFudpTimeout, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
             where AnswerType : Message
         {
             Exception LastException = null;
@@ -129,12 +129,12 @@ namespace Fudp
             throw new CanProgTransportException(LastException);
         }
 
-        public static Message GetMsg(CanFlow flow, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static Message GetMsg(CanFlow flow, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
         {
             var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
             return Message.DecodeMessage(tr.Data);
         }
-        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = DefaultIsoTpTimeoutMs, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
             where MT : Message
         {
             var sw = new Stopwatch();
@@ -389,8 +389,9 @@ namespace Fudp
         public void Submit(SubmitStatus Status)
         {
             var submitMessage = new ProgSubmit(Status);
-            int sendAttempts = Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3;
-            Request<ProgSubmitAck>(Flow, submitMessage);
+            Request<ProgSubmitAck>(Flow, submitMessage,
+                TimeOut:     Status == SubmitStatus.Submit ? 1200 : DefaultFudpTimeout,
+                MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
             _submited = true;
         }
     }
