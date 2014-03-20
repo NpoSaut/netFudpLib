@@ -388,7 +388,7 @@ namespace Fudp
         {
             var submitMessage = new ProgSubmit(Status);
             Request<ProgSubmitAck>(Flow, submitMessage,
-                TimeOut:     Status == SubmitStatus.Submit ? 1200 : DefaultFudpTimeout,
+                TimeOut:     Status == SubmitStatus.Submit ? 15000 : DefaultFudpTimeout,
                 MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
             _submited = true;
         }
