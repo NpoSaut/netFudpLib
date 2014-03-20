@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.IO;
 using System.Threading;
 using Communications.Can;
@@ -19,7 +17,7 @@ namespace Fudp
     /// </summary>
     public class CanProg : IDisposable
     {
-        public const int CurrentProtocolVersion = 4;
+        public const int CurrentProtocolVersion = 5;
         public const int LastCompatibleProtocolVersion = 4;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
