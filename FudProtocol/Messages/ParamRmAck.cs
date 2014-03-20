@@ -14,36 +14,36 @@ namespace Fudp.Messages
         public ParamRmAck()
         { }
 
-        private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
+        private static readonly Dictionary<int, string> ErrorMessagesDictionary = new Dictionary<int, string>()
         {
-            {0, "Парамтр удален успешно"},
+            {0, "Параметр удалён успешно"},
             {1, "Парметр \"только для чтения\""},
             {2, "Параметр не найден"}
         };
-        public Dictionary<int, string> ErrorMsg
+        
+        public String ErrorMessage
         {
-            get { return errorMsg; }
-            set { ;}
+            get
+            {
+                return ErrorMessagesDictionary.ContainsKey(ErrorCode)
+                           ? ErrorMessagesDictionary[ErrorCode]
+                           : "Неизвестная ошибка";
+            }
         }
 
-        private int errorCode;
-        public int ErrorCode
-        {
-            get { return errorCode; }
-            set { ;}
-        }
+        public int ErrorCode { get; private set; }
 
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
             buff[0] = MessageIdentifer;
-            buff[1] = (byte)errorCode;
+            buff[1] = (byte)ErrorCode;
             return buff;
         }
 
         protected override void Decode(byte[] Data)
         {
-            errorCode = Data[1];
+            ErrorCode = Data[1];
         }
     }
 }

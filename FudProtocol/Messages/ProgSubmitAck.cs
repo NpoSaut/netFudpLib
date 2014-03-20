@@ -6,7 +6,7 @@ using System.Text;
 namespace Fudp.Messages
 {
     /// <summary>Статус отмены изменений</summary>
-    public enum SubmitAckStatus : byte
+    public enum SubmitAckStatus : int
     {
         /// <summary>Изменения успешно применены</summary>
         SubmitSuccessed = 0,
@@ -15,7 +15,9 @@ namespace Fudp.Messages
         /// <summary>Изменения успешно отменены</summary>
         CancelSuccessed = 2,
         /// <summary>Не удалось отменить изменения</summary>
-        CancelFails = 3
+        CancelFails = 3,
+        /// <summary>Неизвестный код состояния</summary>
+        Unknown = -1
     }
 
     [Identifer(0x14)]
@@ -28,7 +30,10 @@ namespace Fudp.Messages
 
         protected override void Decode(byte[] Data)
         {
-            Status = (SubmitAckStatus)(Data.Length > 1 ? Data[1] : 0);
+            int statusCode = (Data.Length > 1 ? Data[1] : 0);
+            Status = Enum.IsDefined(typeof (SubmitAckStatus), statusCode)
+                         ? (SubmitAckStatus)statusCode
+                         : SubmitAckStatus.Unknown;
         }
 
         public override byte[] Encode()
@@ -38,6 +43,11 @@ namespace Fudp.Messages
                        MessageIdentifer,
                        (byte)Status
                    };
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0} [ {1} ]", base.ToString(), Status);
         }
     }
 }

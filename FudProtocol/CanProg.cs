@@ -341,7 +341,7 @@ namespace Fudp
             };
             ParamSetAck psa = Request<ParamSetAck>(Flow, psr);
             if (psa.ErrorCode != 0)
-                throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
+                throw new CanProgCreateException(psa.ErrorMessage);
         }
         /// <summary>
         /// Удаление записи из словаря свойств
@@ -349,15 +349,15 @@ namespace Fudp
         /// <param name="paramKey">Ключ</param>
         public void DeleteProperty(byte paramKey)
         {
-            ParamRmRq prr = new ParamRmRq()
-            {
-                ParamKey = paramKey
-            };
+            ParamRmRq prr = new ParamRmRq
+                            {
+                                ParamKey = paramKey
+                            };
             ParamRmAck pra = Request<ParamRmAck>(Flow, prr);
             if (pra.ErrorCode == 0)
-                Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
+                Console.WriteLine(pra.ErrorMessage);
             else
-                throw new CanProgCreateException(pra.ErrorMsg[pra.ErrorCode]);
+                throw new CanProgCreateException(pra.ErrorMessage);
         }
 
         public SubmitStatus SubmitAction { get; set; }
