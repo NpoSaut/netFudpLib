@@ -11,10 +11,7 @@ using Fudp.Exceptions;
 
 namespace Fudp
 {
-    
-    /// <summary>
-    /// Класс компанует, отправляет сообщение и получает ответ
-    /// </summary>
+    /// <summary>Класс компанует, отправляет сообщение и получает ответ</summary>
     public class CanProg : IDisposable
     {
         public const int CurrentProtocolVersion = 5;
@@ -34,10 +31,8 @@ namespace Fudp
             /// <summary>Версии не совместимы</summary>
             UnCompatible
         }
-        /// <summary>
-        /// Проверяет совместимость версии загрузчика с версией программатора
-        /// </summary>
-        /// <returns></returns>
+
+        /// <summary>Проверяет совместимость версии загрузчика с версией программатора</summary>
         public CheckVersionResult CheckProtocolVersion()
         {
             int deviceCurrentProtocolVersion = Properties.ContainsKey(ProtocolVersionKey) ? Properties[ProtocolVersionKey] : 1;
@@ -77,9 +72,7 @@ namespace Fudp
         const int DefaultMaximumSendAttempts = 7;
         private const int DefaultFudpTimeout = 700;
 
-        /// <summary>
-        /// Отправляет сообщение
-        /// </summary>
+        /// <summary>Отправляет сообщение</summary>
         /// <param name="flow">CAN-поток</param>
         /// <param name="msg">Отправляемое сообщение</param>
         /// <param name="TimeOut">Таймаут на ожидание ответа</param>
@@ -164,21 +157,18 @@ namespace Fudp
             }
             throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
         }
-        /// <summary>
-        /// Устанавливает соединение
-        /// </summary>
+
+        /// <summary>Устанавливает соединение</summary>
         /// <param name="Port">Can-порт</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
-        /// <returns></returns>
         public static CanProg Connect(CanPort Port, DeviceTicket device)
         {
             var session = Connect(new CanFlow(Port, FuDev, FuInit, FuProg), device);
             session._disposeFlowOnExit = true;
             return session;
         }
-        /// <summary>
-        /// Устанавливает соединение
-        /// </summary>
+
+        /// <summary>Устанавливает соединение</summary>
         /// <param name="Flow">Пото Can-сообщений</param>
         /// <param name="device">Класс содержащий параметры системы и блока</param>
         /// <returns></returns>
@@ -216,51 +206,47 @@ namespace Fudp
             return res;
         }
 
-        /// <summary>
-        /// Запрос списка файлов
-        /// </summary>
-        /// <returns></returns>
+        /// <summary>Запрос списка файлов</summary>
         public List<DevFileInfo> ListFiles()
         {
-            ProgListRq ListRq = new ProgListRq();
-            return Request<ProgList>(Flow, ListRq).ListDevFileInfo;
+            var listRq = new ProgListRq();
+            return Request<ProgList>(Flow, listRq).ListDevFileInfo;
         }
-        /// <summary>
-        /// Запрос на чтение
-        /// </summary>
+
+        /// <summary>Запрос на чтение</summary>
         public Byte[] ReadFile(DevFileInfo fileInfo)
         {
-            
-            Byte[] buff = new Byte[fileInfo.FileSize + 1];
-            ProgReadRq ReadRq = new ProgReadRq()
-            {
-                FileName = fileInfo.FileName,
-                FileSize = fileInfo.FileSize,
-                Offset = 0,
-            };
+            var buff = new Byte[fileInfo.FileSize];
 
-            while (ReadRq.FileSize > 0)
+            int pointer = 0;
+            const int maximumReadSize = 4000;
+
+            while (pointer < buff.Length)
             {
-                Request<ProgRead>(Flow, ReadRq);
-                
-                ProgRead Read = (ProgRead)GetMsg(Flow);
-                if (Read.ErrorCode != 0)
-                    switch (Read.ErrorCode)
+                var request = new ProgReadRq(fileInfo.FileName, pointer, Math.Min(fileInfo.FileSize - pointer, maximumReadSize));
+                var response = Request<ProgRead>(Flow, request);
+
+                if (response.ErrorCode == 0)
+                {
+                    Buffer.BlockCopy(response.ReadData, 0, buff, pointer, response.ReadData.Length);
+                    pointer += response.ReadData.Length;
+                }
+                else
+                    switch (response.ErrorCode)
                     {
-                        case 1: throw new FileNotFoundException(Read.ErrorMsg[Read.ErrorCode]);
-                        case 2: throw new IndexOutOfRangeException(Read.ErrorMsg[Read.ErrorCode]);
-                        case 3: throw new CanProgReadException(Read.ErrorMsg[Read.ErrorCode]);
+                        case 1: throw new FileNotFoundException(response.ErrorMessage);
+                        case 2: throw new IndexOutOfRangeException(response.ErrorMessage);
+                        case 3: throw new CanProgReadException(response.ErrorMessage);
                         default: throw new CanProgException();
                     }
-                Buffer.BlockCopy(Read.Buff, 0, buff, ReadRq.Offset, Read.Buff.Length);
-                ReadRq.Offset += Read.Buff.Length;
             }
+
             return buff;
         }
         /// <summary>
         /// Команда на удаление
         /// </summary>
-        /// <param name="fileName">Имя фала</param>
+        /// <param name="FileName">Имя фала</param>
         public int DeleteFile(String FileName)
         {
             ProgRm Rm = new ProgRm()

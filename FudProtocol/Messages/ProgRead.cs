@@ -6,76 +6,49 @@ using System.Text;
 namespace Fudp.Messages
 {
     [Identifer(0x06)]
-    class ProgRead : Message
+    public class ProgRead : Message
     {
-        private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
+        private static readonly Dictionary<int, string> MessagesDescriptions = new Dictionary<int, string>()
         {
-            {0, "Файл создан успешно"},
-            {1, "Файл не найден"},
-            {2, "Недопустимое смещение (выходит за границу файла)"},
-            {3, "Ошибка чтения"}
+            { 0, "Файл создан успешно" },
+            { 1, "Файл не найден" },
+            { 2, "Недопустимое смещение (выходит за границу файла)" },
+            { 3, "Ошибка чтения" }
         };
-        public Dictionary<int, string> ErrorMsg
+
+        /// <summary>Запрошенные данные</summary>
+        public byte[] ReadData { get; set; }
+
+        /// <summary>Код ошибки</summary>
+        public int ErrorCode { get; private set; }
+
+        /// <summary>Размер считываемой области</summary>
+        public int ReadSize { get; set; }
+
+        /// <summary>Описание ошибки</summary>
+        public string ErrorMessage
         {
-            get { return errorMsg; }
-            set { ;}
+            get { return MessagesDescriptions[ErrorCode]; }
         }
 
-        Byte[] buff;
-        public Byte[] Buff
-        {
-            get { return buff; }
-            set { ;}
-        }
-        /// <summary>
-        /// Запрошенниые данные
-        /// </summary>
-        Byte[] readBuff;
-        public Byte[] ReadBuff
-        {
-            get { return readBuff; }
-            set { readBuff = value; }
-        }
-        /// <summary>
-        /// Код ошибки
-        /// </summary>
-        private int errorCode;
-        public int ErrorCode
-        {
-            get { return errorCode; }
-            set { ;}
-        }
-        /// <summary>
-        /// Размер считываемой области
-        /// </summary>
-        private int readSize;
-        public int ReadSize
-        {
-            get { return readSize; }
-            set { readSize = value; }
-        }
+        public ProgRead() { }
 
-        public ProgRead()
-        {
-            
-        }
         public override byte[] Encode()
         {
-            buff = new byte[readSize + 2];
+            var buff = new byte[ReadSize + 2];
             buff[0] = MessageIdentifer;
-            buff[1] = (byte)errorCode;
-            Buffer.BlockCopy(readBuff, 0, buff, 2, readSize);
+            buff[1] = (byte)ErrorCode;
+            Buffer.BlockCopy(ReadData, 0, buff, 2, ReadSize);
             return buff;
         }
-        /// <summary>
-        /// Декодирование ответного сообщения
-        /// </summary>
+
+        /// <summary>Декодирование ответного сообщения</summary>
         /// <param name="Data">Принятый массив байт</param>
         protected override void Decode(byte[] Data)
         {
-            buff = new byte[Data.Length - 2];
-            Buffer.BlockCopy(Data, 2, buff, 0, Data.Length - 2);
-            errorCode = (int)Data[1];
+            ReadData = new byte[Data.Length - 2];
+            Buffer.BlockCopy(Data, 2, ReadData, 0, ReadData.Length);
+            ErrorCode = Data[1];
         }
 
     }
