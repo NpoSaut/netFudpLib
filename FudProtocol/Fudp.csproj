@@ -50,6 +50,7 @@
     <Compile Include="Exceptions\CanProgCreateException.cs" />
     <Compile Include="Exceptions\CanProgException.cs" />
     <Compile Include="Exceptions\CanProgFileopException.cs" />
+    <Compile Include="Exceptions\CanProgFlowOccupiedException.cs" />
     <Compile Include="Exceptions\CanProgTransportException.cs" />
     <Compile Include="Exceptions\CanProgUnCompatibleVersionException.cs" />
     <Compile Include="Exceptions\CanProgWriteException.cs" />
@@ -72,6 +73,8 @@
     <Compile Include="Messages\ParamSetRq.cs" />
     <Compile Include="Messages\ProgBCastResponse.cs" />
     <Compile Include="Messages\ProgChecksumError.cs" />
+    <Compile Include="Messages\ProgPing.cs" />
+    <Compile Include="Messages\ProgPong.cs" />
     <Compile Include="Messages\ProgSubmit.cs" />
     <Compile Include="Messages\ProgCreateAck.cs" />
     <Compile Include="Messages\ProgMrProperAck.cs" />

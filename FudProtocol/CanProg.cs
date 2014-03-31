@@ -14,10 +14,19 @@ namespace Fudp
     /// <summary>Класс компанует, отправляет сообщение и получает ответ</summary>
     public class CanProg : IDisposable
     {
-        public const int CurrentProtocolVersion = 5;
+        private static readonly Dictionary<CanFlow, CanProg> ProgsOnFlows = new Dictionary<CanFlow, CanProg>();
+
+        public const int CurrentProtocolVersion = 6;
         public const int LastCompatibleProtocolVersion = 4;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
+
+        public int DeviceProtocolVersion
+        {
+            get { return Properties.ContainsKey(ProtocolVersionKey) ? Properties[ProtocolVersionKey] : 1; }
+        }
+
+        protected Timer PingTimer { get; private set; }
 
         private bool _disposeFlowOnExit = false;
         public static IList<ICanProgLog> Logs { get; set; }
@@ -50,9 +59,25 @@ namespace Fudp
 
         public CanProg(CanFlow Flow)
         {
+            lock (ProgsOnFlows)
+            {
+                if (ProgsOnFlows.ContainsKey(Flow)) throw new CanProgFlowOccupiedException();
+                ProgsOnFlows.Add(Flow, this);
+            }
             this.Flow = Flow;
             Properties = new Dictionary<int, int>();
             SubmitAction = SubmitStatus.Cancel;
+            PingTimer = new Timer(PingTimer_Callback, null, Timeout.Infinite, Timeout.Infinite);
+        }
+
+        private Byte _pingCounter = 0;
+        private void PingTimer_Callback(object State)
+        {
+            Debug.Print("PING!");
+            var pingMessage = new ProgPing(_pingCounter);
+            var pongMessage = Request<ProgPong>(Flow, pingMessage, 200);
+            //SendMsg(Flow, pingMessage, 200);
+            _pingCounter++;
         }
 
         public const UInt16 FuInit = 0x66a8;
@@ -80,82 +105,88 @@ namespace Fudp
         /// <param name="WithAcknowledgmentDescriptor">Дескриптор, с которым передаются подтверждения на сообщение</param>
         public static void SendMsg(CanFlow flow, Message msg, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuProg, UInt16 WithAcknowledgmentDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
         {
-            flow.Clear();
-            for (int attempt = 0; attempt < MaxAttempts; attempt ++)
+            lock (flow)
             {
-#if DEBUG
-                Logs.PushFormatTextEvent("--> {0}", msg);
-#endif
-                try
+                SuspendPingTimer(flow);
+                flow.Clear();
+                for (int attempt = 0; attempt < MaxAttempts; attempt ++)
                 {
-                    flow.Clear();
-                    IsoTp.Send(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
-                    break;
+                    Logs.PushFormatTextEvent("--> {0}", msg);
+                    try
+                    {
+                        flow.Clear();
+                        IsoTp.Send(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, msg.Encode(), TimeSpan.FromMilliseconds(TimeOut));
+                        break;
+                    }
+                    catch(IsoTpProtocolException istoProtocolException)
+                    {
+                        Logs.PushFormatTextEvent("Исключение во время передачи: {0}", istoProtocolException.Message);
+                        Thread.Sleep(100);
+                        if (attempt >= MaxAttempts-1) throw new CanProgTransportException(istoProtocolException);
+                    }
                 }
-                catch(IsoTpProtocolException istoProtocolException)
+            }
+            ResetPingTimer(flow);
+        }
+
+        public static TAnswer Request<TAnswer>(CanFlow flow, Message RequestMessage, int TimeOut = DefaultFudpTimeout, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
+            where TAnswer : Message
+        {
+            lock (flow)
+            {
+                Exception lastException = null;
+                for (int attempt = 0; attempt < MaxAttempts; attempt++)
                 {
-                    Logs.PushFormatTextEvent("Исключение во время передачи: {0}", istoProtocolException.Message);
-                    System.Threading.Thread.Sleep(200);
-                    if (attempt >= MaxAttempts-1) throw new CanProgTransportException(istoProtocolException);
+                    try
+                    {
+                        SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor, MaxAttempts);
+                        return GetMsg<TAnswer>(flow, TimeOut, TheirSideDescriptor, ThisSideDescriptor);
+                    }
+                    catch (IsoTpProtocolException ex) { lastException = ex; }
+                    catch (FudpReceiveTimeoutException ex) { lastException = ex; }
+                    Thread.Sleep(200);
                 }
+                Logs.PushFormatTextEvent("Исключение во время передачи: {0}", lastException);
+                throw new CanProgTransportException(lastException);
             }
         }
 
-        public static AnswerType Request<AnswerType>(CanFlow flow, Message RequestMessage, int TimeOut = DefaultFudpTimeout, UInt16 ThisSideDescriptor = FuProg, UInt16 TheirSideDescriptor = FuDev, int MaxAttempts = DefaultMaximumSendAttempts)
-            where AnswerType : Message
+        public static TMessage GetMsg<TMessage>(CanFlow flow, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
+            where TMessage : Message
         {
-            Exception LastException = null;
-            for (int attempt = 0; attempt < MaxAttempts; attempt++)
+            lock (flow)
             {
-                try
+                SuspendPingTimer(flow);
+                var sw = new Stopwatch();
+                sw.Start();
+                while (sw.ElapsedMilliseconds < TimeOut)
                 {
-                    SendMsg(flow, RequestMessage, TimeOut, ThisSideDescriptor, TheirSideDescriptor, MaxAttempts);
-                    return GetMsg<AnswerType>(flow, TimeOut, TheirSideDescriptor, ThisSideDescriptor);
-                }
-                catch (IsoTpProtocolException ex) { LastException = ex; }
-                catch (FudpReceiveTimeoutException ex) { LastException = ex; }
-                System.Threading.Thread.Sleep(200);
-            }
-            Logs.PushFormatTextEvent("Исключение во время передачи: {0}", LastException);
-            throw new CanProgTransportException(LastException);
-        }
-
-        public static Message GetMsg(CanFlow flow, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
-        {
-            var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
-            return Message.DecodeMessage(tr.Data);
-        }
-        public static MT GetMsg<MT>(CanFlow flow, int TimeOut = DefaultFudpTimeout, UInt16 WithTransmitDescriptor = FuDev, UInt16 WithAcknowledgmentDescriptor = FuProg)
-            where MT : Message
-        {
-            var sw = new Stopwatch();
-            sw.Start();
-            while (sw.ElapsedMilliseconds < TimeOut)
-            {
-                try
-                {
-                    var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
-                        TimeSpan.FromMilliseconds(TimeOut - sw.ElapsedMilliseconds));
-                    var mes = Message.DecodeMessage(tr.Data);
-                    var typedMes = mes as MT;
-                    if (typedMes != null)
+                    try
                     {
+                        var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
+                                               TimeSpan.FromMilliseconds(TimeOut - sw.ElapsedMilliseconds));
+                        var mes = Message.DecodeMessage(tr.Data);
+                        var typedMes = mes as TMessage;
+                        if (typedMes != null)
+                        {
 #if DEBUG
-                        Logs.PushFormatTextEvent("<-- {0}", typedMes);
+                            Logs.PushFormatTextEvent("<-- {0}", typedMes);
 #endif
-                        return typedMes;
-                    }
-                    else
-                    {
+                            ResetPingTimer(flow);
+                            return typedMes;
+                        }
+                        else
+                        {
 #if DEBUG
-                        Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes, typeof (MT));
+                            Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes, typeof (TMessage));
 #endif
+                        }
                     }
+                    catch (IsoTpProtocolException) { }
                 }
-                catch (IsoTpProtocolException) { }
-                //{ throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)), timeoutException); }
+                ResetPingTimer(flow);
+                throw new FudpReceiveTimeoutException(string.Format("Превышено время ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(TMessage)));
             }
-            throw new FudpReceiveTimeoutException(string.Format("Превышено врем ожидания FUDP-сообщения (ожидали сообщения {0})", typeof(MT)));
         }
 
         /// <summary>Устанавливает соединение</summary>
@@ -193,6 +224,7 @@ namespace Fudp
                     var xxx = GetMsg<ProgStatus>(res.Flow, 100);
                     Logs.PushFormatTextEvent("Получили ответ на ProgInit");
                     res.Properties = xxx.Properties;
+                    res.ResetPingTimer();
                     break;
                 }
                 catch (IsoTpProtocolException) { }
@@ -205,6 +237,42 @@ namespace Fudp
 
             return res;
         }
+
+        #region Сброс и приостановка PING-таймера
+
+        private void ResetPingTimer()
+        {
+            if (DeviceProtocolVersion >= 6) // В шестой версии протокола появилась поддержка Ping-Pong поддержания соединения
+                PingTimer.Change(1000, Timeout.Infinite);
+        }
+
+        private static void ResetPingTimer(CanProg Session) { Session.ResetPingTimer(); }
+
+        private static void ResetPingTimer(CanFlow Flow)
+        {
+            CanProg session;
+            lock (ProgsOnFlows)
+            {
+                session = ProgsOnFlows[Flow];
+            }
+            session.ResetPingTimer();
+        }
+
+        private void SuspendPingTimer() { PingTimer.Change(Timeout.Infinite, Timeout.Infinite); }
+        private static void SuspendPingTimer(CanProg Session) { Session.SuspendPingTimer(); }
+
+        private static void SuspendPingTimer(CanFlow Flow)
+        {
+            CanProg session;
+            lock (ProgsOnFlows)
+            {
+                session = ProgsOnFlows[Flow];
+            }
+            session.SuspendPingTimer();
+        }
+
+        #endregion
+
 
         /// <summary>Запрос списка файлов</summary>
         public List<DevFileInfo> ListFiles()
@@ -224,6 +292,7 @@ namespace Fudp
             while (pointer < buff.Length)
             {
                 var request = new ProgReadRq(fileInfo.FileName, pointer, Math.Min(fileInfo.FileSize - pointer, maximumReadSize));
+                Debug.Print("~~~~ READ FILE {0}, Offset {1} of {3}, length {2}", request.FileName, request.Offset, request.Length, fileInfo.FileSize);
                 var response = Request<ProgRead>(Flow, request);
 
                 if (response.ErrorCode == 0)
@@ -354,6 +423,10 @@ namespace Fudp
         /// </summary>
         public void Dispose()
         {
+            lock (ProgsOnFlows)
+            {
+                ProgsOnFlows.Remove(Flow);
+            }
             if (!_submited)
                 try
                 {
