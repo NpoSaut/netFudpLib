@@ -282,15 +282,18 @@ namespace Fudp
         }
 
         /// <summary>Запрос на чтение</summary>
-        public Byte[] ReadFile(DevFileInfo fileInfo)
+        public Byte[] ReadFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
             var buff = new Byte[fileInfo.FileSize];
 
             int pointer = 0;
             const int maximumReadSize = 4000;
 
+            if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(0);
             while (pointer < buff.Length)
             {
+                CancelToken.ThrowIfCancellationRequested();
+
                 var request = new ProgReadRq(fileInfo.FileName, pointer, Math.Min(fileInfo.FileSize - pointer, maximumReadSize));
                 Debug.Print("~~~~ READ FILE {0}, Offset {1} of {3}, length {2}", request.FileName, request.Offset, request.Length, fileInfo.FileSize);
                 var response = Request<ProgRead>(Flow, request);
@@ -308,6 +311,8 @@ namespace Fudp
                         case 3: throw new CanProgReadException(response.ErrorMessage);
                         default: throw new CanProgException();
                     }
+
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
             }
 
             return buff;
@@ -336,11 +341,9 @@ namespace Fudp
         /// <summary>
         /// Команда на создание файла
         /// </summary>
-        /// <param name="fileInfo"></param>
-        /// <param name="ProgressAcceptor"></param>
-        /// <param name="CancelToken"></param>
-        /// <param name="fileName">Имя файла</param>
-        /// <param name="Data">Данные</param>
+        /// <param name="fileInfo">Информация о создаваемом файле</param>
+        /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
+        /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
         public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
