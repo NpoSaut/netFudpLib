@@ -16,6 +16,20 @@ namespace Fudp
     {
         private static readonly Dictionary<CanFlow, CanProg> ProgsOnFlows = new Dictionary<CanFlow, CanProg>();
 
+        public event EventHandler<CanProgFilesystemEventArgs> FileCreated;
+        protected virtual void OnFileCreated(DevFileInfo File)
+        {
+            var handler = FileCreated;
+            if (handler != null) handler(this, new CanProgFilesystemEventArgs(File));
+        }
+
+        public event EventHandler<CanProgFilesystemEventArgs> FileRemoved;
+        protected virtual void OnFileRemoved(String FileName)
+        {
+            var handler = FileRemoved;
+            if (handler != null) handler(this, new CanProgFilesystemEventArgs(new DevFileInfo(FileName, 0, 0)));
+        }
+
         public const int CurrentProtocolVersion = 6;
         public const int LastCompatibleProtocolVersion = 4;
         private const int ProtocolVersionKey = 195;
@@ -159,12 +173,11 @@ namespace Fudp
                 SuspendPingTimer(flow);
                 var sw = new Stopwatch();
                 sw.Start();
-                while (sw.ElapsedMilliseconds < TimeOut)
+                while (10 * sw.ElapsedMilliseconds < TimeOut)
                 {
                     try
                     {
-                        var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor,
-                                               TimeSpan.FromMilliseconds(TimeOut - sw.ElapsedMilliseconds));
+                        var tr = IsoTp.Receive(flow, WithTransmitDescriptor, WithAcknowledgmentDescriptor, TimeSpan.FromMilliseconds(TimeOut));
                         var mes = Message.DecodeMessage(tr.Data);
                         var typedMes = mes as TMessage;
                         if (typedMes != null)
@@ -295,7 +308,6 @@ namespace Fudp
                 CancelToken.ThrowIfCancellationRequested();
 
                 var request = new ProgReadRq(fileInfo.FileName, pointer, Math.Min(fileInfo.FileSize - pointer, maximumReadSize));
-                Debug.Print("~~~~ READ FILE {0}, Offset {1} of {3}, length {2}", request.FileName, request.Offset, request.Length, fileInfo.FileSize);
                 var response = Request<ProgRead>(Flow, request);
 
                 if (response.ErrorCode == 0)
@@ -323,11 +335,10 @@ namespace Fudp
         /// <param name="FileName">Имя фала</param>
         public int DeleteFile(String FileName)
         {
-            ProgRm Rm = new ProgRm()
-            {
-                FileName = FileName
-            };
-            return Request<ProgRmAck>(Flow, Rm).ErrorCode;
+            var removeRequest = new ProgRm(FileName);
+            var removeResponse = Request<ProgRmAck>(Flow, removeRequest);
+            OnFileRemoved(FileName);
+            return removeResponse.ErrorCode;
         }
         /// <summary>
         /// Команда на очистку памяти
@@ -373,6 +384,8 @@ namespace Fudp
 
                 if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
             }
+
+            OnFileCreated(fileInfo);
         }
 
         private int Write(DevFileInfo fileInfo, int offset)
@@ -454,5 +467,11 @@ namespace Fudp
                 MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
             _submited = true;
         }
+    }
+
+    public class CanProgFilesystemEventArgs : EventArgs
+    {
+        public CanProgFilesystemEventArgs(DevFileInfo File) { this.File = File; }
+        public DevFileInfo File { get; private set; }
     }
 }
