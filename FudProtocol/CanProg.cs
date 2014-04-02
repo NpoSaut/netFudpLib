@@ -405,14 +405,16 @@ namespace Fudp
         /// <param name="paramValue">Значение свойства</param>
         public void SetParam(byte paramKey, int paramValue)
         {
-            ParamSetRq psr = new ParamSetRq()
-            {
-                ParamKey = paramKey,
-                ParamVlue = paramValue
-            };
+            ParamSetRq psr = new ParamSetRq(paramKey, paramValue);
             ParamSetAck psa = Request<ParamSetAck>(Flow, psr);
+
             if (psa.ErrorCode != 0)
                 throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
+            else
+            {
+                if (!Properties.ContainsKey(paramKey)) Properties.Add(paramKey, paramValue);
+                else Properties[paramKey] = paramValue;
+            }
         }
         /// <summary>
         /// Удаление записи из словаря свойств

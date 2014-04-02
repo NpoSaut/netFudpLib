@@ -4,38 +4,35 @@ using System.Linq;
 using System.Text;
 
 namespace Fudp.Messages
-{   
-    /// <summary>
-    /// Команда на содание или изменение записи в словаре свойств
-    /// </summary>
+{
+    /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
     [Identifer(0x0f)]
     class ParamSetRq : Message
     {
-        public byte ParamKey { get; set; }
+        public byte ParamKey { get; private set; }
 
-        private int paramValue;
-        public int ParamVlue
+        public int ParamValue { get; private set; }
+
+        public ParamSetRq() { }
+        public ParamSetRq(byte ParamKey, int ParamValue)
         {
-            private get { return paramValue; }
-            set { paramValue = value; }
+            this.ParamKey = ParamKey;
+            this.ParamValue = ParamValue;
         }
-        
-        public ParamSetRq()
-        { }
 
         public override byte[] Encode()
         {
-            byte[] buff = new byte[7];
+            var buff = new byte[7];
             buff[0] = MessageIdentifer;
             buff[1] = ParamKey;
-            Buffer.BlockCopy(BitConverter.GetBytes(paramValue), 0, buff, 2, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(ParamValue), 0, buff, 2, 4);
             return buff;
         }
 
         protected override void Decode(byte[] Data)
         {
             ParamKey = Data[1];
-            paramValue = BitConverter.ToInt32(Data, 2);
+            ParamValue = BitConverter.ToInt32(Data, 2);
         }
     }
 }
