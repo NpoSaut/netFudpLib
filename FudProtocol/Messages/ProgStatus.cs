@@ -18,27 +18,17 @@ namespace Fudp.Messages
         /// <summary>
         /// Количество свойств
         /// </summary>
-        private int numberProperties;
-        public int NumberProperties
-        {
-            get { return numberProperties; }
-            set { numberProperties = value; }
-        }
+        public int PropertiesCount { get; set; }
 
-        private Byte[] buff;
-        public byte[] Buff
-        {
-            get { return buff; }
-            set { ;}
-        }
+        public byte[] Buff { get; private set; }
 
         public override byte[] Encode()
         {
-            buff = new byte[5 * numberProperties + 1];
-            buff[0] = 0x02;
+            Buff = new byte[5 * PropertiesCount + 1];
+            Buff[0] = 0x02;
             throw new NotImplementedException();
             //Buffer.BlockCopy(BitConverter.GetBytes(properties[pKeys.Version]), 1, b, 0, intSize);
-            return buff;
+            return Buff;
                         
         }
         /// <summary>

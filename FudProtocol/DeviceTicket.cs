@@ -24,8 +24,8 @@ namespace Fudp
         /// <summary>
         /// Создаёт билет устройства с заданными параметрами
         /// </summary>
-        /// <param name="SystemId">Id Системы</param>
         /// <param name="BlockId">Id блока</param>
+        /// <param name="Modification">Модификация блока</param>
         /// <param name="BlockSerialNumber">Серийный номер блока</param>
         /// <param name="Module">Номер модуля</param>
         /// <param name="Channel">Номер канала (полукомплекта), начиная с 1</param>
@@ -63,11 +63,11 @@ namespace Fudp
 
             var t = (DeviceTicket)obj;
             return
-                this.BlockId == this.BlockId &&
-                this.Modification == this.Modification &&
-                this.Module == this.Module &&
-                this.BlockSerialNumber == this.BlockSerialNumber &&
-                this.Channel == this.Channel;
+                BlockId == t.BlockId &&
+                Modification == t.Modification &&
+                Module == t.Module &&
+                BlockSerialNumber == t.BlockSerialNumber &&
+                Channel == t.Channel;
         }
 
         public override int GetHashCode()

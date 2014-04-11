@@ -34,5 +34,10 @@ namespace Fudp.Messages
             ParamKey = Data[1];
             ParamValue = BitConverter.ToInt32(Data, 2);
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0}  [ set {{{1}}} to \"{2}\" ]", base.ToString(), ParamKey, paramValue);
+        }
     }
 }

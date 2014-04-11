@@ -409,7 +409,7 @@ namespace Fudp
             ParamSetAck psa = Request<ParamSetAck>(Flow, psr);
 
             if (psa.ErrorCode != 0)
-                throw new CanProgCreateException(psa.ErrorMsg[psa.ErrorCode]);
+                throw new CanProgCreateException(psa.ErrorMessage);
             else
             {
                 if (!Properties.ContainsKey(paramKey)) Properties.Add(paramKey, paramValue);
@@ -422,15 +422,15 @@ namespace Fudp
         /// <param name="paramKey">Ключ</param>
         public void DeleteProperty(byte paramKey)
         {
-            ParamRmRq prr = new ParamRmRq()
-            {
-                ParamKey = paramKey
-            };
+            ParamRmRq prr = new ParamRmRq
+                            {
+                                ParamKey = paramKey
+                            };
             ParamRmAck pra = Request<ParamRmAck>(Flow, prr);
             if (pra.ErrorCode == 0)
-                Console.WriteLine(pra.ErrorMsg[pra.ErrorCode]);
+                Console.WriteLine(pra.ErrorMessage);
             else
-                throw new CanProgCreateException(pra.ErrorMsg[pra.ErrorCode]);
+                throw new CanProgCreateException(pra.ErrorMessage);
         }
 
         public SubmitStatus SubmitAction { get; set; }
@@ -465,7 +465,7 @@ namespace Fudp
         {
             var submitMessage = new ProgSubmit(Status);
             Request<ProgSubmitAck>(Flow, submitMessage,
-                TimeOut:     Status == SubmitStatus.Submit ? 1200 : DefaultFudpTimeout,
+                TimeOut:     Status == SubmitStatus.Submit ? 15000 : DefaultFudpTimeout,
                 MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
             _submited = true;
         }

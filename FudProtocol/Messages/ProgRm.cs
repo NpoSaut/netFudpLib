@@ -34,5 +34,10 @@ namespace Fudp.Messages
             Buffer.BlockCopy(Data, 2, buff, 0, Data[1]);
             FileName = Encoding.GetEncoding(1251).GetString(buff);
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} [ {1} ]", base.ToString(), FileName);
+        }
     }
 }

@@ -1,44 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
+using Fudp.Messages;
 
 namespace Fudp.Exceptions
 {
-    /// <Summary>
-    /// Ошибка при записи в файл
-    /// </Summary>
+    /// <Summary>Ошибка при записи в файл</Summary>
     [Serializable]
     public class CanProgWriteException : Exception
     {
-        public Messages.ProgWriteAck.WriteStatusKind writeStatus { get; set; }
-
-        public CanProgWriteException() : base("Ошибка при записи в файл")
-        {
-        }
-
-        public CanProgWriteException(Exception inner) : base("Ошибка при записи в файл", inner)
-        {
-        }
-
-        public CanProgWriteException(string message) : base(message)
-        {
-        }
-
-        public CanProgWriteException(string message, Exception inner) : base(message, inner)
-        {
-        }
+        public CanProgWriteException() : base("Ошибка при записи в файл") { }
 
         protected CanProgWriteException(
             SerializationInfo info,
-            StreamingContext context) : base(info, context)
-        {
-        }
+            StreamingContext context) : base(info, context) { }
 
-        public CanProgWriteException(Messages.ProgWriteAck.WriteStatusKind writeStatus)
-        {
-            this.writeStatus = writeStatus;
-        }
+        public CanProgWriteException(ProgWriteAck.WriteStatusKind ErrorKind) : this() { this.ErrorKind = ErrorKind; }
+
+        public ProgWriteAck.WriteStatusKind ErrorKind { get; set; }
     }
 }

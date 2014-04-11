@@ -59,5 +59,7 @@ namespace Fudp.Messages
                     .Where(T => T.IsSubclassOf(typeof(Message)))
                     .ToDictionary(GetIdentifer);
         }
+
+        public override string ToString() { return this.GetType().Name; }
     }
 }

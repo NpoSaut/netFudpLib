@@ -6,7 +6,7 @@ using System.Text;
 namespace Fudp.Messages
 {
     /// <summary>
-    /// Подтверждение содания или изменения записи в словаре свойств
+    /// Подтверждение создания или изменения записи в словаре свойств
     /// </summary>
     [Identifer(0x10)]
     class ParamSetAck : Message
@@ -15,36 +15,40 @@ namespace Fudp.Messages
         public ParamSetAck()
         { }
 
-        private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
+        private static readonly Dictionary<int, string> ErrorMessagesDictionary = new Dictionary<int, string>()
         {
             {0, "Значение свойств запиано успешно"},
             {1, "Свойство \"только для чтения\""},
-            {2, "Первышено максимальное количество свойств"}
+            {2, "Превышено максимальное количество свойств"}
         };
-        public Dictionary<int, string> ErrorMsg
+        public String ErrorMessage
         {
-            get { return errorMsg; }
-            set { ;}
+            get
+            {
+                return ErrorMessagesDictionary.ContainsKey(ErrorCode)
+                           ? ErrorMessagesDictionary[ErrorCode]
+                           : "Неизвестная ошибка";
+            }
         }
 
-        private int errorCode;
-        public int ErrorCode
-        {
-            get { return errorCode; }
-            set { ;}
-        }
+        public int ErrorCode { get; private set; }
 
         public override byte[] Encode()
         {
             byte[] buff = new byte[7];
             buff[0] = MessageIdentifer;
-            buff[1] = (byte)errorCode;
+            buff[1] = (byte)ErrorCode;
             return buff;
         }
 
         protected override void Decode(byte[] Data)
         {
-            errorCode = Data[1];
+            ErrorCode = Data[1];
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0} [ {1} ]", base.ToString(), ErrorMessage);
         }
     }
 }
