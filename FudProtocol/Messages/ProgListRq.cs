@@ -1,34 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 
 namespace Fudp.Messages
 {
     [Identifer(0x03)]
-    class ProgListRq : Message
-    {       
-        /// <summary>
-        /// Запроса списка фалов
-        /// </summary>
-        public ProgListRq()
+    internal class ProgListRq : Message
+    {
+        /// <summary>Запроса списка фалов</summary>
+        public ProgListRq(ushort Offset = 0, ushort Count = 0)
         {
+            this.Offset = Offset;
+            this.Count = Count;
         }
-        
-        /// <summary>
-        /// Кодирование сообщения
-        /// </summary>
+
+        public ushort Offset { get; private set; }
+        public ushort Count { get; private set; }
+
+        /// <summary>Кодирование сообщения</summary>
         /// <returns></returns>
         public override byte[] Encode()
         {
-            byte [] buff = new byte[7];     // TODO: Почему 7? И почему у Димы работает с семёркой??
-            buff[0] = MessageIdentifer;
-            return buff;
+            using (var ms = new MemoryStream())
+            {
+                var bw = new BinaryWriter(ms);
+                bw.Write(MessageIdentifer);
+                bw.Write(Offset);
+                bw.Write(Count);
+                return ms.ToArray();
+            }
         }
-        protected override void Decode(byte[] Data)
-        {
-            
-        }
+
+        protected override void Decode(byte[] Data) { }
     }
 }
-

@@ -45,7 +45,7 @@ namespace Fudp.Messages
 
             while (dataStream.Position < dataStream.Length)
             {
-                Files.Add(DecodeFileListItem(dataStream));
+                Files.Add(DecodeFileListItem(dataStream));                                  
             }
         }
 

@@ -293,7 +293,7 @@ namespace Fudp
 
         private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
         {
-            var listRq = new ProgListRq();
+            var listRq = new ProgListRq((ushort)Offset);
             int counter = 0;
             foreach (var file in Request<ProgList>(Flow, listRq).Files)
             {
