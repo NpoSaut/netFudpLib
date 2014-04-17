@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Communications.Can;
 using Communications.Protocols.IsoTP;
@@ -30,7 +31,7 @@ namespace Fudp
             if (handler != null) handler(this, new CanProgFilesystemEventArgs(new DevFileInfo(FileName, 0, 0)));
         }
 
-        public const int CurrentProtocolVersion = 6;
+        public const int CurrentProtocolVersion = 8;
         public const int LastCompatibleProtocolVersion = 4;
         private const int ProtocolVersionKey = 195;
         private const int LastCompatibleProtocolVersionKey = 196;
@@ -288,10 +289,22 @@ namespace Fudp
 
 
         /// <summary>Запрос списка файлов</summary>
-        public List<DevFileInfo> ListFiles()
+        public List<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
+
+        private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
         {
             var listRq = new ProgListRq();
-            return Request<ProgList>(Flow, listRq).ListDevFileInfo;
+            int counter = 0;
+            foreach (var file in Request<ProgList>(Flow, listRq).Files)
+            {
+                counter++;
+                if (file is DevFileInfo) yield return (DevFileInfo)file;
+                else
+                {
+                    var appendix = RequestFiles(Offset + counter);
+                    foreach (var subfile in appendix) yield return subfile;
+                }
+            }
         }
 
         /// <summary>Запрос на чтение</summary>

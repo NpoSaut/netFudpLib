@@ -1,68 +1,52 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Fudp
 {
-    public class DevFileInfo
-    {
-        /// <summary>
-        /// Имя файла
-        /// </summary>
-        private string fileName;
-        public string FileName
-        {
-            get { return fileName; }
-            set { fileName = value; }
-        }
-        /// <summary>
-        /// Размер файла
-        /// </summary>
-        private int fileSize;
-        public int FileSize
-        {
-            get { return fileSize; }
-            set { fileSize = value; }
-        }
-        /// <summary>
-        /// Контрольня сумма файла
-        /// </summary>
-        public ushort ControlSum { get; set; }
-        /// <summary>
-        /// Данные
-        /// </summary>
-        public byte[] Data { get; set; }
+    public abstract class DevFileListNode { }
 
-        /// <summary>
-        /// Создаёт образ файла на устройстве с указанными размером и контрольной суммой
-        /// </summary>
+    internal class DevFileListIncompleteTransactionFlag : DevFileListNode
+    {
+        public DevFileListIncompleteTransactionFlag(uint Remaining) { this.Remaining = Remaining; }
+        public uint Remaining { get; private set; }
+    }
+
+    public class DevFileInfo : DevFileListNode
+    {
+        /// <summary>Создаёт образ файла на устройстве с указанными размером и контрольной суммой</summary>
         /// <param name="Name">Имя файла</param>
         /// <param name="Size">Размер файла</param>
         /// <param name="Checksum">Контрольная сумма</param>
-        public DevFileInfo(String Name, int Size, UInt16 Checksum)
+        public DevFileInfo(String Name, Int32 Size, UInt16 Checksum)
         {
-            this.FileName = Name;
-            this.FileSize = Size;
-            this.ControlSum = Checksum;
-            this.Data = null;
+            FileName = Name;
+            FileSize = Size;
+            ControlSum = Checksum;
+            Data = null;
         }
-        /// <summary>
-        /// Представляет файл на устройстве
-        /// </summary>
+
+        /// <summary>Представляет файл на устройстве</summary>
         /// <param name="Name">Имя файла</param>
         /// <param name="Data">Данные файла</param>
         public DevFileInfo(String Name, Byte[] Data)
         {
-            this.FileName = Name;
+            FileName = Name;
             this.Data = Data;
-            this.FileSize = Data.Length;
-            this.ControlSum = FudpCrc.CalcCrc(Data);
+            FileSize = Data.Length;
+            ControlSum = FudpCrc.CalcCrc(Data);
         }
 
-        public override string ToString()
-        {
-            return string.Format("{0} ({1} Б)", FileName, FileSize);
-        }
+        /// <summary>Имя файла</summary>
+        public string FileName { get; private set; }
+
+        /// <summary>Размер файла</summary>
+        public Int32 FileSize { get; private set; }
+
+        /// <summary>Контрольная сумма файла</summary>
+        public UInt16 ControlSum { get; private set; }
+
+        /// <summary>Данные</summary>
+        public byte[] Data { get; private set; }
+
+        public override string ToString() { return string.Format("{0} ({1} Б)", FileName, FileSize); }
     }
 }
