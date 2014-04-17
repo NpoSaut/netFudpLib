@@ -454,6 +454,7 @@ namespace Fudp
         /// </summary>
         public void Dispose()
         {
+            SuspendPingTimer();
             lock (ProgsOnFlows)
             {
                 ProgsOnFlows.Remove(Flow);
@@ -477,9 +478,10 @@ namespace Fudp
         public void Submit(SubmitStatus Status)
         {
             var submitMessage = new ProgSubmit(Status);
-            Request<ProgSubmitAck>(Flow, submitMessage,
-                TimeOut:     Status == SubmitStatus.Submit ? 15000 : DefaultFudpTimeout,
-                MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
+            var submitAnswer = Request<ProgSubmitAck>(Flow, submitMessage,
+                                                      Status == SubmitStatus.Submit ? 15000 : DefaultFudpTimeout,
+                                                      MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
+            var status = submitAnswer.Status;
             _submited = true;
         }
     }
