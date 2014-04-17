@@ -37,7 +37,7 @@ namespace Fudp.Messages
 
         public override string ToString()
         {
-            return string.Format("{0}  [ set {{{1}}} to \"{2}\" ]", base.ToString(), ParamKey, paramValue);
+            return string.Format("{0}  [ set {{{1}}} to \"{2}\" ]", base.ToString(), ParamKey, ParamValue);
         }
     }
 }
