@@ -282,7 +282,7 @@ namespace Fudp
             {
                 session = ProgsOnFlows[Flow];
             }
-            session.SuspendPingTimer();
+            SuspendPingTimer(session);
         }
 
         #endregion
@@ -297,8 +297,11 @@ namespace Fudp
             int counter = 0;
             foreach (var file in Request<ProgList>(Flow, listRq).Files)
             {
-                counter++;
-                if (file is DevFileInfo) yield return (DevFileInfo)file;
+                if (file is DevFileInfo)
+                {
+                    counter++;
+                    yield return (DevFileInfo)file;
+                }
                 else
                 {
                     var appendix = RequestFiles(Offset + counter);
