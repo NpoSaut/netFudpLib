@@ -485,6 +485,7 @@ namespace Fudp
                                                       Status == SubmitStatus.Submit ? 15000 : DefaultFudpTimeout,
                                                       MaxAttempts: Status == SubmitStatus.Submit ? DefaultMaximumSendAttempts : 3);
             var status = submitAnswer.Status;
+            Console.WriteLine("SUBMIT STATUS: {0}", status);
             _submited = true;
         }
     }
