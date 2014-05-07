@@ -478,7 +478,7 @@ namespace Fudp
         /// <summary>
         /// Отправляет запрос на завершение сеанса программирования
         /// </summary>
-        public void Submit(SubmitStatus Status)
+        public SubmitAckStatus Submit(SubmitStatus Status)
         {
             var submitMessage = new ProgSubmit(Status);
             var submitAnswer = Request<ProgSubmitAck>(Flow, submitMessage,
@@ -487,6 +487,7 @@ namespace Fudp
             var status = submitAnswer.Status;
             Console.WriteLine("SUBMIT STATUS: {0}", status);
             _submited = true;
+            return status;
         }
     }
 
