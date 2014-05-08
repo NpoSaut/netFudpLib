@@ -240,13 +240,11 @@ namespace Fudp
                     res.Properties = xxx.Properties;
                     res.ResetPingTimer();
 
-#if DEBUG
-                    Console.WriteLine("PROPERTIES:");
+                    Debug.Print("PROPERTIES:");
+                    Debug.Indent();
                     foreach (var property in res.Properties)
-                    {
-                        Console.WriteLine("  {0} : {1}", property.Key, property.Value);
-                    }
-#endif
+                        Debug.Print("  {0} : {1}", property.Key, property.Value);
+                    Debug.Unindent();
 
                     break;
                 }
