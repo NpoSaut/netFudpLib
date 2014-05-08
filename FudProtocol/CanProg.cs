@@ -239,6 +239,15 @@ namespace Fudp
                     Logs.PushFormatTextEvent("Получили ответ на ProgInit");
                     res.Properties = xxx.Properties;
                     res.ResetPingTimer();
+
+#if DEBUG
+                    Console.WriteLine("PROPERTIES:");
+                    foreach (var property in res.Properties)
+                    {
+                        Console.WriteLine("  {0} : {1}", property.Key, property.Value);
+                    }
+#endif
+
                     break;
                 }
                 catch (IsoTpProtocolException) { }
