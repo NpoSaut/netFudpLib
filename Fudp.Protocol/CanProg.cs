@@ -358,8 +358,6 @@ namespace Fudp.Protocol
         /// <param name="FileName">Имя фала</param>
         public int DeleteFile(String FileName)
         {
-            var removeRequest = new ProgRm(FileName);
-            var removeResponse = Request<ProgRmAck>(Flow, removeRequest);
             OnFileRemoved(FileName);
             return removeResponse.ErrorCode;
         }
@@ -381,23 +379,7 @@ namespace Fudp.Protocol
         /// <returns></returns>
         public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
-            var create = new ProgCreate()
-            {
-                FileName = fileInfo.FileName,
-                FileSize = fileInfo.FileSize,
-                CRC = FudpCrc.CalcCrc(fileInfo.Data)
-            };
-
-            var createAck = Request<ProgCreateAck>(Flow, create);
-            if (createAck.ErrorCode != 0)
-                switch (createAck.ErrorCode)
-                {
-                    case 1: throw new CanProgFileAlreadyExistsException(createAck.ErrorMsg[createAck.ErrorCode]);
-                    case 2: throw new CanProgMaximumFilesCountAchivedException(createAck.ErrorMsg[createAck.ErrorCode]);
-                    case 3: throw new CanProgMemoryIsOutException(createAck.ErrorMsg[createAck.ErrorCode]);
-                    case 4: throw new CanProgCreateException(createAck.ErrorMsg[createAck.ErrorCode]);
-                    default: throw new CanProgException();
-                }
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             int pointer = 0;
             while (pointer < fileInfo.FileSize)

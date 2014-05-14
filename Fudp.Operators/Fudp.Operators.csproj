@@ -32,14 +32,21 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IFudpConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="FudpFileOperator.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Fudp.Model\Fudp.Model.csproj">
+      <Project>{0297E089-50F4-4727-8030-7B07B4566DCA}</Project>
+      <Name>Fudp.Model</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Fudp.Protocol\Fudp.Protocol.csproj">
+      <Project>{041B7F5D-2FED-4672-A18B-ECB72B6C1860}</Project>
+      <Name>Fudp.Protocol</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

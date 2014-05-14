@@ -6,7 +6,7 @@ using System.Text;
 namespace Fudp.Protocol.Messages
 {
     [Identifer(0x04)]
-    class ProgList : Message
+    public class ProgList : Message
     {
         public ProgList()
         { }

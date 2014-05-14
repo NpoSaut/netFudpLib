@@ -3,7 +3,7 @@
 namespace Fudp.Protocol.Messages
 {
     [Identifer(0x08)]
-    class ProgRmAck : Message
+    public class ProgRmAck : Message
     {
         public ProgRmAck()
         { }

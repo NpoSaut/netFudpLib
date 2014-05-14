@@ -43,7 +43,14 @@
     <Compile Include="DeviceFileEventArgs.cs" />
     <Compile Include="DeviceFileInfo.cs" />
     <Compile Include="IFileOperator.cs" />
+    <Compile Include="IFudpConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Fudp.Protocol\Fudp.Protocol.csproj">
+      <Project>{041B7F5D-2FED-4672-A18B-ECB72B6C1860}</Project>
+      <Name>Fudp.Protocol</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
