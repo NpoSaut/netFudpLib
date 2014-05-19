@@ -4,7 +4,7 @@ using System.Text;
 namespace Fudp.Protocol.Messages
 {
     [Identifer(0x05)]
-    class ProgReadRq : Message
+    public class ProgReadRq : Message
     {
         /// <summary>Имя файла</summary>
         public string FileName { get; set; }

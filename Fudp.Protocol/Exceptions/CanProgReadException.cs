@@ -2,7 +2,7 @@
 
 namespace Fudp.Protocol.Exceptions
 {
-    class CanProgReadException : CanProgException
+    public class CanProgReadException : CanProgException
     {
         public CanProgReadException()
             : base()

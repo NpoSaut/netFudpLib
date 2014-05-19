@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Fudp.Model;
+using Fudp.Model.Filesystem;
 using Fudp.Protocol;
 using Fudp.Protocol.Exceptions;
 using Fudp.Protocol.Messages;

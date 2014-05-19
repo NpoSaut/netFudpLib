@@ -40,10 +40,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Device.cs" />
-    <Compile Include="DeviceFileEventArgs.cs" />
-    <Compile Include="DeviceFileInfo.cs" />
-    <Compile Include="IFileOperator.cs" />
-    <Compile Include="IFudpConnection.cs" />
+    <Compile Include="Filesystem\DeviceFileEventArgs.cs" />
+    <Compile Include="Filesystem\DeviceFileInfo.cs" />
+    <Compile Include="Filesystem\FilesystemModel.cs" />
+    <Compile Include="IDeviceLocator.cs" />
+    <Compile Include="Filesystem\IFileOperator.cs" />
+    <Compile Include="IOperatorsFactory.cs" />
+    <Compile Include="PropStore\DevicePropertyEventArgs.cs" />
+    <Compile Include="PropStore\DevicePropertyInfo.cs" />
+    <Compile Include="PropStore\IPropertyOperator.cs" />
+    <Compile Include="PropStore\PropertiesModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

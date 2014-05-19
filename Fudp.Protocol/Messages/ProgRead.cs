@@ -49,5 +49,6 @@ namespace Fudp.Protocol.Messages
             ErrorCode = Data[1];
         }
 
+        public static int GetPayload(String FileName, int PacketLength) { return PacketLength - FileName.Length - 10; }
     }
 }

@@ -34,11 +34,23 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FudpDeviceLocator.cs" />
+    <Compile Include="FudpFileStream.cs" />
+    <Compile Include="FudpOptions.cs" />
+    <Compile Include="FudpOverIsoTpConnection.cs" />
     <Compile Include="IFudpConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FudpFileOperator.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Can\Communications\Communications.csproj">
+      <Project>{6C5B1ECA-5187-4F63-8CF1-C17DF50D0F65}</Project>
+      <Name>Communications</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Can\IsoTP\IsoTP.csproj">
+      <Project>{A45417B6-4547-4E98-B69E-4CB1CFE45F61}</Project>
+      <Name>IsoTP</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Fudp.Model\Fudp.Model.csproj">
       <Project>{0297E089-50F4-4727-8030-7B07B4566DCA}</Project>
       <Name>Fudp.Model</Name>

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Fudp.Model
+namespace Fudp.Model.Filesystem
 {
     public class DeviceFileEventArgs : EventArgs
     {

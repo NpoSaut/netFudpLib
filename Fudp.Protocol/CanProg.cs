@@ -15,7 +15,6 @@ namespace Fudp.Protocol
     /// <summary>Класс компанует, отправляет сообщение и получает ответ</summary>
     public class CanProg : IDisposable
     {
-        private static readonly Dictionary<CanFlow, CanProg> ProgsOnFlows = new Dictionary<CanFlow, CanProg>();
 
         public event EventHandler<CanProgFilesystemEventArgs> FileCreated;
         protected virtual void OnFileCreated(DevFileInfo File)
@@ -40,8 +39,6 @@ namespace Fudp.Protocol
         {
             get { return Properties.ContainsKey(ProtocolVersionKey) ? Properties[ProtocolVersionKey] : 1; }
         }
-
-        protected Timer PingTimer { get; private set; }
 
         private bool _disposeFlowOnExit = false;
         public static IList<ICanProgLog> Logs { get; set; }
@@ -85,19 +82,6 @@ namespace Fudp.Protocol
             PingTimer = new Timer(PingTimer_Callback, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        private Byte _pingCounter = 0;
-        private void PingTimer_Callback(object State)
-        {
-            Debug.Print("PING!");
-            var pingMessage = new ProgPing(_pingCounter);
-            var pongMessage = Request<ProgPong>(Flow, pingMessage, 200);
-            //SendMsg(Flow, pingMessage, 200);
-            _pingCounter++;
-        }
-
-        public const UInt16 FuInit = 0x66a8;
-        public const UInt16 FuProg = 0x66c8;
-        public const UInt16 FuDev =  0x66e8;
         /// <summary>
         /// Словарь свойств файлов
         /// </summary>
@@ -109,8 +93,6 @@ namespace Fudp.Protocol
 
         public DeviceTicket Device { get; private set; }
 
-        const int DefaultMaximumSendAttempts = 7;
-        private const int DefaultFudpTimeout = 700;
 
         /// <summary>Отправляет сообщение</summary>
         /// <param name="flow">CAN-поток</param>
@@ -259,40 +241,6 @@ namespace Fudp.Protocol
             return res;
         }
 
-        #region Сброс и приостановка PING-таймера
-
-        private void ResetPingTimer()
-        {
-            if (DeviceProtocolVersion >= 6) // В шестой версии протокола появилась поддержка Ping-Pong поддержания соединения
-                PingTimer.Change(1000, Timeout.Infinite);
-        }
-
-        private static void ResetPingTimer(CanProg Session) { Session.ResetPingTimer(); }
-
-        private static void ResetPingTimer(CanFlow Flow)
-        {
-            CanProg session;
-            lock (ProgsOnFlows)
-            {
-                session = ProgsOnFlows[Flow];
-            }
-            session.ResetPingTimer();
-        }
-
-        private void SuspendPingTimer() { PingTimer.Change(Timeout.Infinite, Timeout.Infinite); }
-        private static void SuspendPingTimer(CanProg Session) { Session.SuspendPingTimer(); }
-
-        private static void SuspendPingTimer(CanFlow Flow)
-        {
-            CanProg session;
-            lock (ProgsOnFlows)
-            {
-                session = ProgsOnFlows[Flow];
-            }
-            SuspendPingTimer(session);
-        }
-
-        #endregion
 
 
         /// <summary>Запрос списка файлов</summary>

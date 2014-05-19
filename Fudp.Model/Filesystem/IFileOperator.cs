@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace Fudp.Model
+namespace Fudp.Model.Filesystem
 {
     /// <summary>Файловый FUDP-оператор</summary>
     public interface IFileOperator

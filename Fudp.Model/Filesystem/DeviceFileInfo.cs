@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Fudp.Model
+namespace Fudp.Model.Filesystem
 {
     /// <summary>Запись о файле на устройстве</summary>
     public class DeviceFileInfo
