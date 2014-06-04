@@ -8,7 +8,7 @@ using System.Text;
 namespace Fudp.Messages
 {
     [Identifer(0x04)]
-    class ProgList : Message
+    public class ProgList : Message
     {
         public ProgList()
         { }

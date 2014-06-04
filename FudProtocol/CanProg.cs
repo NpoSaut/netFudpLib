@@ -381,12 +381,7 @@ namespace Fudp
         /// <returns></returns>
         public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
-            var create = new ProgCreate()
-            {
-                FileName = fileInfo.FileName,
-                FileSize = fileInfo.FileSize,
-                CRC = FudpCrc.CalcCrc(fileInfo.Data)
-            };
+            var create = new ProgCreate(fileInfo.FileName, fileInfo.FileSize, FudpCrc.CalcCrc(fileInfo.Data));
 
             var createAck = Request<ProgCreateAck>(Flow, create);
             if (createAck.ErrorCode != 0)
