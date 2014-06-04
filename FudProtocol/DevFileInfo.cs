@@ -8,6 +8,8 @@ namespace Fudp
     {
         public DevFileListIncompleteTransactionFlag(uint Remaining) { this.Remaining = Remaining; }
         public uint Remaining { get; private set; }
+
+        public override string ToString() { return string.Format("{{INCOMPLETE-{0}}}", Remaining); }
     }
 
     public class DevFileInfo : DevFileListNode

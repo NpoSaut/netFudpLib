@@ -58,6 +58,10 @@ namespace Fudp.Messages
             //    Console.WriteLine("Key: {0}", Data[i]);
             //}
         }
-        
+
+        public override string ToString()
+        {
+            return string.Format("{0} Properties: {1}", base.ToString(), string.Join("; ", Properties.Select(p => string.Format("{0}={1}", p.Key, p.Value))));
+        }
     }
 }

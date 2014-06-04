@@ -3,7 +3,7 @@
 namespace Fudp.Messages
 {
     [Identifer(0x03)]
-    internal class ProgListRq : Message
+    public class ProgListRq : Message
     {
         /// <summary>Запроса списка фалов</summary>
         public ProgListRq(ushort Offset = 0, ushort Count = 0)
