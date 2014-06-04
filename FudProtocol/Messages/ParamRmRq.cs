@@ -9,12 +9,11 @@ namespace Fudp.Messages
     /// Команда на удаление параметра из словаря свойств
     /// </summary>
     [Identifer(0x11)]
-    class ParamRmRq : Message
+    public class ParamRmRq : Message
     {
-        public ParamRmRq()
-        { }
+        public ParamRmRq(byte ParamKey) { this.ParamKey = ParamKey; }
 
-        public byte ParamKey { get; set; }
+        public byte ParamKey { get; private set; }
 
         public override byte[] Encode()
         {

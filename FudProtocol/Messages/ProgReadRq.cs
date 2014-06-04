@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Fudp.Messages
 {
     [Identifer(0x05)]
-    class ProgReadRq : Message
+    public class ProgReadRq : Message
     {
         /// <summary>Имя файла</summary>
         public string FileName { get; set; }

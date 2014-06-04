@@ -7,7 +7,7 @@ namespace Fudp.Messages
 {
     /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
     [Identifer(0x0f)]
-    class ParamSetRq : Message
+    public class ParamSetRq : Message
     {
         public byte ParamKey { get; private set; }
 

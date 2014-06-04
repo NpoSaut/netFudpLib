@@ -440,10 +440,7 @@ namespace Fudp
         /// <param name="paramKey">Ключ</param>
         public void DeleteProperty(byte paramKey)
         {
-            ParamRmRq prr = new ParamRmRq
-                            {
-                                ParamKey = paramKey
-                            };
+            ParamRmRq prr = new ParamRmRq(paramKey);
             ParamRmAck pra = Request<ParamRmAck>(Flow, prr);
             if (pra.ErrorCode == 0)
                 Console.WriteLine(pra.ErrorMessage);
