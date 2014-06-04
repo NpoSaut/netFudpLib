@@ -61,7 +61,7 @@ namespace Fudp.Messages
         /// <param name="Offset">Отступ в файле на программируемом устройстве и в передаваемом буфере данных</param>
         /// <param name="DataBuffer">Буфер данных</param>
         public ProgWrite(String FileName, int Offset, Byte[] DataBuffer)
-            : this(FileName, Offset, Offset, DataBuffer)
+            : this(FileName, Offset, 0, DataBuffer)
         { }
         /// <summary>
         /// Создаёт сообщение записи для указаного файла с указанным отступом
