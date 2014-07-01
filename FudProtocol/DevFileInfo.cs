@@ -49,6 +49,6 @@ namespace Fudp
         /// <summary>Данные</summary>
         public byte[] Data { get; private set; }
 
-        public override string ToString() { return string.Format("{0} ({1} Б)", FileName, FileSize); }
+        public override string ToString() { return string.Format("{0} ({1}Б {2:x4})", FileName, FileSize, ControlSum); }
     }
 }
