@@ -69,7 +69,7 @@ namespace Fudp.Messages
         /// <param name="File">Файл для отправки</param>
         /// <param name="Offset">Отступ</param>
         public ProgWrite(DevFileInfo File, int Offset)
-            : this(File.FileName, Offset, File.Data)
+            : this(File.FileName, Offset, Offset, File.Data)
         { }
 
 
