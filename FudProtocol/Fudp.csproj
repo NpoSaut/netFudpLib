@@ -66,6 +66,7 @@
     <Compile Include="FudpFileStream.cs" />
     <Compile Include="ICanProgLog.cs" />
     <Compile Include="IdentiferAttribute.cs" />
+    <Compile Include="IDeviceLocator.cs" />
     <Compile Include="IProgressAcceptor.cs" />
     <Compile Include="Messages\ParamRmAck.cs" />
     <Compile Include="Messages\ParamRmRq.cs" />
