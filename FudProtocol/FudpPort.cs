@@ -14,12 +14,14 @@ namespace Fudp
 
         public FudpPort(IIsoTpConnection IsoTpConnection)
         {
+            _isoTpConnection = IsoTpConnection;
+
             Options = new FudpPortOptions(_isoTpConnection.Options.DataCapacity);
 
-            _isoTpConnection = IsoTpConnection;
             IConnectableObservable<Message> rx = IsoTpConnection.Rx
                                                                 .Select(packet => Message.DecodeMessage(packet.Data))
                                                                 .Publish();
+            Rx = rx;
             _rxDisposer = rx.Connect();
 
             _tx = new Subject<Message>();
