@@ -30,7 +30,9 @@ namespace Fudp
                     return fudpPort.Request(new ProgInit(Template),
                                             flow => flow.OfType<ProgBCastResponse>()
                                                         .Select(resp => resp.Ticket)
-                                                        .Buffer(Timeout)
+                                                        .Take(TimeSpan.FromMilliseconds(Timeout))
+                                                        .Distinct()
+                                                        .ToList()
                                                         .First());
                 }
 
