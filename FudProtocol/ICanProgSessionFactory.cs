@@ -1,3 +1,4 @@
+using System;
 using Communications;
 using Fudp.Messages;
 
@@ -9,7 +10,8 @@ namespace Fudp
         /// <summary>Открывает сессию удалённого обновления ПО</summary>
         /// <param name="Port">Используемый FUDP-порт</param>
         /// <param name="Target">Билет цели обновления</param>
+        /// <param name="Timeout"></param>
         /// <returns>Открытая сессия</returns>
-        CanProgSession OpenSession(IFudpPort Port, DeviceTicket Target);
+        CanProgSession OpenSession(IFudpPort Port, DeviceTicket Target, TimeSpan Timeout);
     }
 }

@@ -6,13 +6,10 @@ namespace Fudp
 {
     public class CanProgSessionFactory : ICanProgSessionFactory
     {
-        private readonly TimeSpan _timeout;
-        public CanProgSessionFactory(TimeSpan Timeout) { _timeout = Timeout; }
-
-        public CanProgSession OpenSession(IFudpPort Port, DeviceTicket Target)
+        public CanProgSession OpenSession(IFudpPort Port, DeviceTicket Target, TimeSpan Timeout)
         {
             ProgStatus status = Observable.Repeat<Object>(null)
-                                          .Select(x => Port.FudpRequest(new ProgInit(Target), _timeout))
+                                          .Select(x => Port.FudpRequest(new ProgInit(Target), Timeout))
                                           .Repeat()
                                           .First();
 
