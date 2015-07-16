@@ -9,7 +9,7 @@ namespace Fudp.Messages
     /// Подтверждение создания или изменения записи в словаре свойств
     /// </summary>
     [Identifer(0x10)]
-    class ParamSetAck : Message
+    public class ParamSetAck : Message
     {
         
         public ParamSetAck()

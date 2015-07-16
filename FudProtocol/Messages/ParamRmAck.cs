@@ -9,7 +9,7 @@ namespace Fudp.Messages
     /// Подтверждение удаления параметра из словаря
     /// </summary>
     [Identifer(0x12)]
-    class ParamRmAck : Message
+    public class ParamRmAck : Message
     {
         public ParamRmAck()
         { }

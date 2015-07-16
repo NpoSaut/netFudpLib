@@ -6,7 +6,7 @@ using System.Text;
 namespace Fudp.Messages
 {
     [Identifer(0x0a)]
-    class ProgCreateAck : Message
+    public class ProgCreateAck : Message
     {
         private static Dictionary<int, string> errorMsg = new Dictionary<int, string>()
         {

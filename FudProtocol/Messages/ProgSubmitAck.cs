@@ -21,7 +21,7 @@ namespace Fudp.Messages
     }
 
     [Identifer(0x14)]
-    class ProgSubmitAck : Message
+    public class ProgSubmitAck : Message
     {
         public SubmitAckStatus Status { get; private set; }
 

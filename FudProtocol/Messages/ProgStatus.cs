@@ -7,7 +7,7 @@ using Fudp.Exceptions;
 namespace Fudp.Messages
 {
     [Identifer(0x02)]
-    internal class ProgStatus : Message
+    public class ProgStatus : Message
     {
         /// <summary>Словарь свойств</summary>
         public Dictionary<int, int> Properties { get; private set; }
