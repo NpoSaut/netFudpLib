@@ -1,25 +1,31 @@
 ﻿using System;
-using System.Reactive.Linq;
 using Communications;
+using Fudp.Exceptions;
 using Fudp.Messages;
+using Polly;
 
 namespace Fudp
 {
     public static class FudpRequests
     {
+        private static readonly Policy _retryPolicy;
+
+        static FudpRequests()
+        {
+            _retryPolicy =
+                Policy
+                    .Handle<TimeoutException>()
+                    .Or<Exception>()
+                    .Retry(3);
+        }
+
         private static TAnswer FudpRequest<TAnswer>(this IFudpPort Port, Message Request, TimeSpan Timeout)
             where TAnswer : Message
         {
-            return Observable.Repeat(Request)
-                             .Select(rq => Port.Request(Request, Timeout))
-                             .Cast<TAnswer>()
-                             .Repeat(3)
-                             .First();
-
-            //var ans = (TAnswer)Port.Request(Request, Timeout);
-            //if (ans == null)
-            //    throw new ApplicationException("Ожидали не то сообщение");
-            //return ans;
+            Message answer = _retryPolicy.Execute(() => Port.Request(Request, Timeout));
+            if (!(answer is TAnswer))
+                throw new FudpUnexpectedFrameReceivedException(typeof (TAnswer), answer);
+            return (TAnswer)answer;
         }
 
         public static ProgPong FudpRequest(this IFudpPort Port, ProgPing Request, TimeSpan Timeout) { return FudpRequest<ProgPong>(Port, Request, Timeout); }
