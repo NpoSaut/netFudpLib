@@ -23,7 +23,7 @@ namespace Fudp.Messages
         public int ErrorCode { get; private set; }
 
         /// <summary>Размер считываемой области</summary>
-        public int ReadSize { get; set; }
+        public int ReadSize { get { return ReadData.Count(); } }
 
         /// <summary>Описание ошибки</summary>
         public string ErrorMessage
@@ -32,6 +32,18 @@ namespace Fudp.Messages
         }
 
         public ProgRead() { }
+
+        public ProgRead(int ErrorCode)
+        {
+            this.ErrorCode = ErrorCode;
+            ReadData = new byte[0];
+        }
+
+        public ProgRead(byte[] Data)
+        {
+            ErrorCode = 0;
+            ReadData = Data;
+        }
 
         public override byte[] Encode()
         {
