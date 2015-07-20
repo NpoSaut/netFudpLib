@@ -134,13 +134,13 @@ namespace Fudp
                 switch (createAck.ErrorCode)
                 {
                     case 1:
-                        throw new CanProgFileAlreadyExistsException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgFileAlreadyExistsException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     case 2:
-                        throw new CanProgMaximumFilesCountAchivedException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgMaximumFilesCountAchivedException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     case 3:
-                        throw new CanProgMemoryIsOutException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgMemoryIsOutException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     case 4:
-                        throw new CanProgCreateException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgCreateException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     default:
                         throw new CanProgException();
                 }
