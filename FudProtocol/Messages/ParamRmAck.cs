@@ -11,8 +11,7 @@ namespace Fudp.Messages
     [Identifer(0x12)]
     public class ParamRmAck : Message
     {
-        public ParamRmAck()
-        { }
+        public ParamRmAck(int Status = 0) { ErrorCode = Status; }
 
         private static readonly Dictionary<int, string> ErrorMessagesDictionary = new Dictionary<int, string>()
         {
