@@ -14,7 +14,7 @@ namespace Fudp.Messages
             Unknown = 255
         }
 
-        public ProgWriteAck(WriteStatusKind Status = WriteStatusKind.OK) : this() { this.Status = Status; }
+        public ProgWriteAck(WriteStatusKind Status = WriteStatusKind.OK) { this.Status = Status; }
 
         /// <summary>Статус записи</summary>
         public WriteStatusKind Status { get; private set; }
