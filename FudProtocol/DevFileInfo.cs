@@ -37,6 +37,14 @@ namespace Fudp
             ControlSum = FudpCrc.CalcCrc(Data);
         }
 
+        public DevFileInfo(String Name, Int32 Size, Byte[] Data, UInt16 Checksum)
+        {
+            FileName = Name;
+            FileSize = Size;
+            this.Data = Data;
+            ControlSum = Checksum;
+        }
+
         /// <summary>Имя файла</summary>
         public string FileName { get; private set; }
 
