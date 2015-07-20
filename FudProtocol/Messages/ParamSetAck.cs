@@ -12,10 +12,9 @@ namespace Fudp.Messages
     public class ParamSetAck : Message
     {
         
-        public ParamSetAck()
-        { }
+        public ParamSetAck(int Status = 0) { ErrorCode = Status; }
 
-        private static readonly Dictionary<int, string> ErrorMessagesDictionary = new Dictionary<int, string>()
+        private static readonly Dictionary<int, string> _errorMessagesDictionary = new Dictionary<int, string>()
         {
             {0, "Значение свойств запиано успешно"},
             {1, "Свойство \"только для чтения\""},
@@ -25,8 +24,8 @@ namespace Fudp.Messages
         {
             get
             {
-                return ErrorMessagesDictionary.ContainsKey(ErrorCode)
-                           ? ErrorMessagesDictionary[ErrorCode]
+                return _errorMessagesDictionary.ContainsKey(ErrorCode)
+                           ? _errorMessagesDictionary[ErrorCode]
                            : "Неизвестная ошибка";
             }
         }
