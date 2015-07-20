@@ -1,5 +1,6 @@
 using System;
 using Communications;
+using Communications.Can;
 using Fudp.Messages;
 
 namespace Fudp
@@ -8,10 +9,9 @@ namespace Fudp
     public interface ICanProgSessionFactory
     {
         /// <summary>Открывает сессию удалённого обновления ПО</summary>
-        /// <param name="Port">Используемый FUDP-порт</param>
         /// <param name="Target">Билет цели обновления</param>
-        /// <param name="Timeout"></param>
+        /// <param name="CanPort"></param>
         /// <returns>Открытая сессия</returns>
-        CanProgSession OpenSession(IFudpPort Port, DeviceTicket Target, TimeSpan Timeout);
+        IProgSession OpenSession(ICanPort CanPort, DeviceTicket Target);
     }
 }

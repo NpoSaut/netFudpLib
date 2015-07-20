@@ -8,7 +8,7 @@ namespace Fudp
 {
     public class FudpFileStream : Stream
     {
-        public CanProgSession Session { get; set; }
+        public FudpProgSession Session { get; set; }
 
         public override bool CanRead { get { return false; } }
         public override bool CanSeek { get { return true; } }

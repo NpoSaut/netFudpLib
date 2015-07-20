@@ -9,7 +9,7 @@ using Fudp.Messages;
 
 namespace Fudp
 {
-    public class CanProgSession : IDisposable
+    public class FudpProgSession : IProgSession
     {
         private readonly IDisposable _pinger;
         private readonly IFudpPort _port;
@@ -19,7 +19,7 @@ namespace Fudp
 
         public DeviceTicket Device { get; private set; }
 
-        public CanProgSession(IFudpPort Port, IPropertiesManager PropertiesManager, DeviceTicket Device)
+        public FudpProgSession(IFudpPort Port, IPropertiesManager PropertiesManager, DeviceTicket Device)
         {
             _port = Port;
             _propertiesManager = PropertiesManager;
@@ -112,12 +112,13 @@ namespace Fudp
             return buff;
         }
 
-        public int DeleteFile(String FileName)
+        public void DeleteFile(string FileName)
         {
             var removeRequest = new ProgRm(FileName);
             ProgRmAck removeResponse = _port.FudpRequest(removeRequest, _timeout);
+            if (removeResponse.ErrorCode != 0)
+                throw new CanProgDeleteException(removeResponse.ErrorCode);
             OnFileRemoved(FileName);
-            return removeResponse.ErrorCode;
         }
 
         /// <summary>Команда на создание файла</summary>
@@ -172,7 +173,7 @@ namespace Fudp
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
         /// <param name="paramKey">Ключ</param>
         /// <param name="paramValue">Значение свойства</param>
-        public void SetParam(byte paramKey, int paramValue)
+        public void SetProperty(byte paramKey, int paramValue)
         {
             ParamSetAck psa = _port.FudpRequest(new ParamSetRq(paramKey, paramValue),
                                                 _timeout);

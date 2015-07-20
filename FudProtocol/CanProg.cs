@@ -424,7 +424,7 @@ namespace Fudp
 //        /// </summary>
 //        /// <param name="paramKey">Ключ</param>
 //        /// <param name="paramValue">Значение свойства</param>
-//        public void SetParam(byte paramKey, int paramValue)
+//        public void SetProperty(byte paramKey, int paramValue)
 //        {
 //            ParamSetRq psr = new ParamSetRq(paramKey, paramValue);
 //            ParamSetAck psa = Request<ParamSetAck>(Flow, psr);

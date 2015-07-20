@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Communications.Protocols.IsoTP;
@@ -26,6 +27,10 @@ namespace Fudp
 
             _tx = new Subject<Message>();
             _tx.Subscribe(Write);
+
+
+            rx.Subscribe(f => Debug.Print("FUDP: <-- {0}", f));
+            _tx.Subscribe(f => Debug.Print("FUDP: --> {0}", f));
         }
 
         /// <summary>Опции порта</summary>
