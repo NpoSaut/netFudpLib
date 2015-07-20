@@ -15,9 +15,7 @@ namespace Fudp.Messages
         /// <summary>
         /// Список файлов
         /// </summary>
-        public List<DevFileListNode> Files { get; private set; }
-
-        public byte[] Buff { get; private set; }
+        public List<DevFileListNode> Files { get; set; }
 
         public override byte[] Encode()
         {            
