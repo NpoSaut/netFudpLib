@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -16,9 +17,9 @@ namespace Fudp
     {
         private static readonly Policy _retryPolicy =
             Policy
-                .Handle<TimeoutException>()
-                .Or<FudpException>()
-                .Or<IsoTpWrongFrameException>()
+                .Handle<FudpException>()
+                .Or<IsoTpProtocolException>()
+                .Or<TimeoutException>()
                 .RetryForever();
 
         public IProgSession OpenSession(ICanPort CanPort, DeviceTicket Target)
@@ -26,12 +27,13 @@ namespace Fudp
             IObserver<Message> initChannel = Observer.Create<Message>(f => CanPort.Tx.OnNext(new SingleFrame(f.Encode()).GetCanFrame(CanProg.FuInit)));
 
             ProgStatus status;
-            using (IIsoTpConnection connectIsoTpPort = CanPort.OpenIsoTpConnection(CanProg.FuProg, CanProg.FuDev, TimeSpan.FromMilliseconds(500)))
+            using (IIsoTpConnection connectIsoTpPort = CanPort.OpenIsoTpConnection(CanProg.FuProg, CanProg.FuDev, new IsoTpConnectionParameters()))
             {
                 using (IFudpPort connectFudpPort = new FudpPort(connectIsoTpPort))
                 {
                     // ReSharper disable once AccessToDisposedClosure
                     status = _retryPolicy.Execute(() => Connect(connectFudpPort, initChannel, Target));
+                    //status = Connect(connectFudpPort, initChannel, Target);
                 }
             }
             return CreateSession(status, CanPort, Target);
@@ -49,7 +51,7 @@ namespace Fudp
 
         private IProgSession CreateSession(ProgStatus Status, ICanPort CanPort, DeviceTicket Target)
         {
-            IIsoTpConnection isoTpPort = CanPort.OpenIsoTpConnection(CanProg.FuProg, CanProg.FuDev, TimeSpan.FromMilliseconds(500));
+            IIsoTpConnection isoTpPort = CanPort.OpenIsoTpConnection(CanProg.FuProg, CanProg.FuDev, new IsoTpConnectionParameters());
             var fudpPort = new FudpPort(isoTpPort);
             return new DisposeProgSessionDecorator(
                 new FudpProgSession(fudpPort, new PropertiesManager(Status.Properties), Target),

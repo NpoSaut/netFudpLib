@@ -23,7 +23,7 @@ namespace Fudp
         /// <returns></returns>
         public IList<DeviceTicket> LocateDevices(DeviceTicket Template, ICanPort Port, int Timeout = 100)
         {
-            using (IIsoTpConnection connection = Port.OpenIsoTpConnection(CanProg.FuInit, CanProg.FuDev, TimeSpan.FromMilliseconds(Timeout)))
+            using (IIsoTpConnection connection = Port.OpenIsoTpConnection(CanProg.FuInit, CanProg.FuDev, new IsoTpConnectionParameters()))
             {
                 using (var fudpPort = new FudpPort(connection))
                 {

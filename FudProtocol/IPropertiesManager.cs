@@ -14,8 +14,14 @@ namespace Fudp
 
         public int this[byte Key]
         {
-            get { throw new System.NotImplementedException(); }
-            set { throw new System.NotImplementedException(); }
+            get { return _cache[Key]; }
+            set
+            {
+                if (_cache.ContainsKey(Key))
+                    _cache[Key] = value;
+                else
+                    _cache.Add(Key, value);
+            }
         }
     }
 }

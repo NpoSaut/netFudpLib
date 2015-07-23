@@ -14,10 +14,8 @@ namespace Fudp
         private readonly IDisposable _pinger;
         private readonly IFudpPort _port;
         private readonly IPropertiesManager _propertiesManager;
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(700);
+        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(7000);
         private bool _submited;
-
-        public DeviceTicket Device { get; private set; }
 
         public FudpProgSession(IFudpPort Port, IPropertiesManager PropertiesManager, DeviceTicket Device)
         {
@@ -30,6 +28,8 @@ namespace Fudp
                                 .Select((x, i) => (Byte)i)
                                 .Subscribe(Ping);
         }
+
+        public DeviceTicket Device { get; private set; }
 
         public void Dispose()
         {
@@ -48,27 +48,7 @@ namespace Fudp
             }
         }
 
-        private void Ping(byte i) { _port.FudpRequest(new ProgPing(i), _timeout); }
-
         public IList<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
-
-        private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
-        {
-            int counter = 0;
-            foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
-            {
-                if (file is DevFileInfo)
-                {
-                    counter++;
-                    yield return (DevFileInfo)file;
-                }
-                else
-                {
-                    IEnumerable<DevFileInfo> appendix = RequestFiles(Offset + counter);
-                    foreach (DevFileInfo subfile in appendix) yield return subfile;
-                }
-            }
-        }
 
         public Byte[] ReadFile(DevFileInfo File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
         {
@@ -159,17 +139,6 @@ namespace Fudp
             OnFileCreated(fileInfo);
         }
 
-        private int Write(DevFileInfo fileInfo, int offset)
-        {
-            ProgWriteAck result = _port.FudpRequest(new ProgWrite(fileInfo, offset),
-                                                    _timeout);
-
-            if (result.Status != ProgWriteAck.WriteStatusKind.OK)
-                throw new CanProgWriteException(result.Status);
-
-            return new ProgWrite(fileInfo, offset).Data.Length;
-        }
-
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
         /// <param name="paramKey">Ключ</param>
         /// <param name="paramValue">Значение свойства</param>
@@ -209,7 +178,41 @@ namespace Fudp
             return status;
         }
 
-        private void OnFileCreated(DevFileInfo FileInfo) { throw new NotImplementedException(); }
-        private void OnFileRemoved(string FileName) { throw new NotImplementedException(); }
+        private void Ping(byte i)
+        {
+            //_port.FudpRequest(new ProgPing(i), _timeout);
+        }
+
+        private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
+        {
+            int counter = 0;
+            foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
+            {
+                if (file is DevFileInfo)
+                {
+                    counter++;
+                    yield return (DevFileInfo)file;
+                }
+                else
+                {
+                    IEnumerable<DevFileInfo> appendix = RequestFiles(Offset + counter);
+                    foreach (DevFileInfo subfile in appendix) yield return subfile;
+                }
+            }
+        }
+
+        private int Write(DevFileInfo fileInfo, int offset)
+        {
+            ProgWriteAck result = _port.FudpRequest(new ProgWrite(fileInfo, offset),
+                                                    _timeout);
+
+            if (result.Status != ProgWriteAck.WriteStatusKind.OK)
+                throw new CanProgWriteException(result.Status);
+
+            return new ProgWrite(fileInfo, offset).Data.Length;
+        }
+
+        private void OnFileCreated(DevFileInfo FileInfo) { }
+        private void OnFileRemoved(string FileName) { }
     }
 }
