@@ -76,7 +76,7 @@
     <Compile Include="Exceptions\FudpIdentiferMismatchException.cs" />
     <Compile Include="Exceptions\CanProgLimitConnectExcepion.cs" />
     <Compile Include="Exceptions\CanProgReadException.cs" />
-    <Compile Include="DevFileInfo.cs" />
+    <Compile Include="DevFile.cs" />
     <Compile Include="DeviceTicket.cs" />
     <Compile Include="Exceptions\FudpReceiveTimeoutException.cs" />
     <Compile Include="Exceptions\FudpUnknownIdentiferExceptoin.cs" />

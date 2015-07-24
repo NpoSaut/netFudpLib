@@ -1,6 +1,6 @@
 ﻿namespace Fudp
 {
-    public enum PropertyKind
+    public enum PropertyKind : byte
     {
         FirmwareVersion = 1,
         FrimwareSubversion = 2,

@@ -24,7 +24,7 @@ namespace Fudp
 //        private static readonly Dictionary<CanFlow, CanProg> ProgsOnFlows = new Dictionary<CanFlow, CanProg>();
 
 //        public event EventHandler<CanProgFilesystemEventArgs> FileCreated;
-//        protected virtual void OnFileCreated(DevFileInfo File)
+//        protected virtual void OnFileCreated(DevFile File)
 //        {
 //            var handler = FileCreated;
 //            if (handler != null) handler(this, new CanProgFilesystemEventArgs(File));
@@ -34,7 +34,7 @@ namespace Fudp
 //        protected virtual void OnFileRemoved(String FileName)
 //        {
 //            var handler = FileRemoved;
-//            if (handler != null) handler(this, new CanProgFilesystemEventArgs(new DevFileInfo(FileName, 0, 0)));
+//            if (handler != null) handler(this, new CanProgFilesystemEventArgs(new DevFile(FileName, 0, 0)));
 //        }
 
 //        public const int CurrentProtocolVersion = 8;
@@ -299,18 +299,18 @@ namespace Fudp
 
 
 //        /// <summary>Запрос списка файлов</summary>
-//        public List<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
+//        public List<DevFile> ListFiles() { return RequestFiles().ToList(); }
 
-//        private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
+//        private IEnumerable<DevFile> RequestFiles(int Offset = 0)
 //        {
 //            var listRq = new ProgListRq((ushort)Offset);
 //            int counter = 0;
 //            foreach (var file in Request<ProgList>(Flow, listRq).Files)
 //            {
-//                if (file is DevFileInfo)
+//                if (file is DevFile)
 //                {
 //                    counter++;
-//                    yield return (DevFileInfo)file;
+//                    yield return (DevFile)file;
 //                }
 //                else
 //                {
@@ -321,9 +321,9 @@ namespace Fudp
 //        }
 
 //        /// <summary>Запрос на чтение</summary>
-//        public Byte[] ReadFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+//        public Byte[] ReadFile(DevFile fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
 //        {
-//            var buff = new Byte[fileInfo.FileSize];
+//            var buff = new Byte[fileInfo.Size];
 
 //            int pointer = 0;
 //            const int maximumReadSize = 4000;
@@ -333,7 +333,7 @@ namespace Fudp
 //            {
 //                CancelToken.ThrowIfCancellationRequested();
 
-//                var request = new ProgReadRq(fileInfo.FileName, pointer, Math.Min(fileInfo.FileSize - pointer, maximumReadSize));
+//                var request = new ProgReadRq(fileInfo.FileName, pointer, Math.Min(fileInfo.Size - pointer, maximumReadSize));
 //                var response = Request<ProgRead>(Flow, request);
 
 //                if (response.ErrorCode == 0)
@@ -350,7 +350,7 @@ namespace Fudp
 //                        default: throw new CanProgException();
 //                    }
 
-//                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
+//                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.Size)));
 //            }
 
 //            return buff;
@@ -382,9 +382,9 @@ namespace Fudp
 //        /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
 //        /// <param name="CancelToken">Токен отмены</param>
 //        /// <returns></returns>
-//        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+//        public void CreateFile(DevFile fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
 //        {
-//            var create = new ProgCreate(fileInfo.FileName, fileInfo.FileSize, FudpCrc.CalcCrc(fileInfo.Data));
+//            var create = new ProgCreate(fileInfo.FileName, fileInfo.Size, FudpCrc.CalcCrc(fileInfo.Data));
 
 //            var createAck = Request<ProgCreateAck>(Flow, create);
 //            if (createAck.ErrorCode != 0)
@@ -398,18 +398,18 @@ namespace Fudp
 //                }
 
 //            int pointer = 0;
-//            while (pointer < fileInfo.FileSize)
+//            while (pointer < fileInfo.Size)
 //            {
 //                CancelToken.ThrowIfCancellationRequested();
 //                pointer += Write(fileInfo, pointer);
 
-//                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
+//                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.Size)));
 //            }
 
 //            OnFileCreated(fileInfo);
 //        }
 
-//        private int Write(DevFileInfo fileInfo, int offset)
+//        private int Write(DevFile fileInfo, int offset)
 //        {
 //            ProgWrite WriteMessage = new ProgWrite(fileInfo, offset);
 
@@ -495,7 +495,7 @@ namespace Fudp
 
     public class CanProgFilesystemEventArgs : EventArgs
     {
-        public CanProgFilesystemEventArgs(DevFileInfo File) { this.File = File; }
-        public DevFileInfo File { get; private set; }
+        public CanProgFilesystemEventArgs(DevFile File) { this.File = File; }
+        public DevFile File { get; private set; }
     }
 }

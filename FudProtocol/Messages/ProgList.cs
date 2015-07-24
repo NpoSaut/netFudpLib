@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,29 +9,52 @@ namespace Fudp.Messages
     [Identifer(0x04)]
     public class ProgList : Message
     {
-        public ProgList()
-        { }
-        /// <summary>
-        /// Список файлов
-        /// </summary>
+        /// <summary>Список файлов</summary>
         public List<DevFileListNode> Files { get; set; }
 
-        public override byte[] Encode()
-        {            
-//            int disOffset = 1;
-//            Buff = new byte[4000];
-//            Buff[0] = MessageIdentifer;
-//            for (int i = 0; i < Files.Count; i++)
-//            {
-//                Buff[i + disOffset] = (byte)Files[i].FileSize;
-//                Buffer.BlockCopy(Encoding.GetEncoding(1251).GetBytes(Files[i].FileName), 0, Buff, disOffset+1, Files[i].FileSize);
-//                disOffset += Files[i].FileSize + 1;
-//            }
-            throw new NotImplementedException();
+        public static int CalcSizeOfHeader() { return 1; }
+
+        public static int CalcSizeFor(DevFileListNode node)
+        {
+            if (node is DevFileInfo)
+            {
+                var file = (DevFileInfo)node;
+                return 1 + file.FileName.Length + 4 + 4;
+            }
+            if (node is DevFileListIncompleteTransactionFlag)
+                return 9;
+            return 0;
         }
-        /// <summary>
-        /// Декодирование ответного сообщения
-        /// </summary>
+
+        public override byte[] Encode()
+        {
+            using (var memory = new MemoryStream())
+            {
+                var writer = new BinaryWriter(memory, DefaultEncoding);
+                writer.Write(MessageIdentifer);
+                foreach (DevFileListNode fileNode in Files)
+                {
+                    if (fileNode is DevFileInfo)
+                    {
+                        var file = (DevFileInfo)fileNode;
+                        writer.Write((byte)file.FileName.Length);
+                        writer.Write(file.FileName.ToCharArray());
+                        writer.Write(file.Size);
+                        writer.Write(file.ControlSum);
+                    }
+                    if (fileNode is DevFileListIncompleteTransactionFlag)
+                    {
+                        var file = (DevFileListIncompleteTransactionFlag)fileNode;
+                        writer.Write((byte)0);
+                        writer.Write(file.Remaining);
+                        writer.Write((uint)0);
+                    }
+                }
+                return memory.ToArray();
+            }
+        }
+
+        /// <summary>Декодирование ответного сообщения</summary>
         /// <param name="Data">Принятый массив байт</param>
         protected override void Decode(byte[] Data)
         {
@@ -42,9 +64,7 @@ namespace Fudp.Messages
             dataStream.Seek(1, SeekOrigin.Begin);
 
             while (dataStream.Position < dataStream.Length)
-            {
-                Files.Add(DecodeFileListItem(dataStream));                                  
-            }
+                Files.Add(DecodeFileListItem(dataStream));
         }
 
         private DevFileListNode DecodeFileListItem(Stream DataStream)
@@ -55,17 +75,11 @@ namespace Fudp.Messages
             {
                 var fileNameBytes = new byte[fileNameLength];
                 DataStream.Read(fileNameBytes, 0, fileNameLength);
-                return new DevFileInfo(
-                    Name: Encoding.GetEncoding(1251).GetString(fileNameBytes),
-                    Size: reader.ReadInt32(),
-                    Checksum: (UInt16)reader.ReadUInt32());
+                return new DevFileInfo(Encoding.GetEncoding(1251).GetString(fileNameBytes), reader.ReadInt32(), (UInt16)reader.ReadUInt32());
             }
-            else
-            {
-                var remaining = reader.ReadUInt32();
-                DataStream.Seek(4, SeekOrigin.Current);
-                return new DevFileListIncompleteTransactionFlag(remaining);
-            }
+            uint remaining = reader.ReadUInt32();
+            DataStream.Seek(4, SeekOrigin.Current);
+            return new DevFileListIncompleteTransactionFlag(remaining);
         }
 
         public override string ToString()

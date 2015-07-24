@@ -13,8 +13,8 @@ namespace Fudp.Messages
         protected abstract void Decode(Byte[] Data);
         public abstract Byte[] Encode();
 
-        private static readonly Encoding _DefaultEncodung = Encoding.GetEncoding(1251);
-        protected static Encoding DefaultEncodung { get { return _DefaultEncodung; } }
+        private static readonly Encoding _defaultEncoding = Encoding.GetEncoding(1251);
+        protected static Encoding DefaultEncoding { get { return _defaultEncoding; } }
 
         private static readonly Lazy<Dictionary<byte, Type>> _Identifers = new Lazy<Dictionary<byte,Type>>(InitializeIdentifers, true);
         public static Dictionary<byte, Type> Identifers

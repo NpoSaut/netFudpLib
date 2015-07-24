@@ -50,29 +50,29 @@ namespace Fudp
 
         private void Ping(byte i) { _port.FudpRequest(new ProgPing(i), _timeout); }
 
-        public IList<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
+        public IList<DevFile> ListFiles() { return RequestFiles().ToList(); }
 
-        private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
+        private IEnumerable<DevFile> RequestFiles(int Offset = 0)
         {
             int counter = 0;
             foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
             {
-                if (file is DevFileInfo)
+                if (file is DevFile)
                 {
                     counter++;
-                    yield return (DevFileInfo)file;
+                    yield return (DevFile)file;
                 }
                 else
                 {
-                    IEnumerable<DevFileInfo> appendix = RequestFiles(Offset + counter);
-                    foreach (DevFileInfo subfile in appendix) yield return subfile;
+                    IEnumerable<DevFile> appendix = RequestFiles(Offset + counter);
+                    foreach (DevFile subfile in appendix) yield return subfile;
                 }
             }
         }
 
-        public Byte[] ReadFile(DevFileInfo File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
+        public Byte[] ReadFile(DevFile File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
         {
-            var buff = new Byte[File.FileSize];
+            var buff = new Byte[File.Size];
 
             int pointer = 0;
 
@@ -83,7 +83,7 @@ namespace Fudp
             {
                 CancellationToken.ThrowIfCancellationRequested();
 
-                var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.FileSize - pointer, maximumReadSize));
+                var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.Size - pointer, maximumReadSize));
                 ProgRead response = _port.FudpRequest(request, _timeout);
 
                 if (response.ErrorCode == 0)
@@ -106,7 +106,7 @@ namespace Fudp
                     }
                 }
 
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.FileSize)));
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
             }
 
             return buff;
@@ -121,14 +121,13 @@ namespace Fudp
         }
 
         /// <summary>Команда на создание файла</summary>
-        /// <param name="fileInfo">Информация о создаваемом файле</param>
+        /// <param name="File">Информация о создаваемом файле</param>
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
         /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+        public void CreateFile(DevFile File, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
-            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(fileInfo.FileName, fileInfo.FileSize, FudpCrc.CalcCrc(fileInfo.Data)),
-                                                        _timeout);
+            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(File), _timeout);
             if (createAck.ErrorCode != 0)
             {
                 switch (createAck.ErrorCode)
@@ -147,26 +146,26 @@ namespace Fudp
             }
 
             int pointer = 0;
-            while (pointer < fileInfo.FileSize)
+            while (pointer < File.Size)
             {
                 CancelToken.ThrowIfCancellationRequested();
-                pointer += Write(fileInfo, pointer);
+                pointer += Write(File, pointer);
 
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
             }
 
-            OnFileCreated(fileInfo);
+            OnFileCreated(File);
         }
 
-        private int Write(DevFileInfo fileInfo, int offset)
+        private int Write(DevFile File, int offset)
         {
-            ProgWriteAck result = _port.FudpRequest(new ProgWrite(fileInfo, offset),
+            ProgWriteAck result = _port.FudpRequest(new ProgWrite(File, offset),
                                                     _timeout);
 
             if (result.Status != ProgWriteAck.WriteStatusKind.OK)
                 throw new CanProgWriteException(result.Status);
 
-            return new ProgWrite(fileInfo, offset).Data.Length;
+            return new ProgWrite(File, offset).Data.Length;
         }
 
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
@@ -208,7 +207,7 @@ namespace Fudp
             return status;
         }
 
-        private void OnFileCreated(DevFileInfo FileInfo) { throw new NotImplementedException(); }
+        private void OnFileCreated(DevFile File) { throw new NotImplementedException(); }
         private void OnFileRemoved(string FileName) { throw new NotImplementedException(); }
     }
 }

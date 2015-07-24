@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Fudp.Messages
 {
@@ -9,16 +6,17 @@ namespace Fudp.Messages
     [Identifer(0x0f)]
     public class ParamSetRq : Message
     {
-        public byte ParamKey { get; private set; }
-
-        public int ParamValue { get; private set; }
-
         public ParamSetRq() { }
+
         public ParamSetRq(byte ParamKey, int ParamValue)
         {
             this.ParamKey = ParamKey;
             this.ParamValue = ParamValue;
         }
+
+        public byte ParamKey { get; private set; }
+
+        public int ParamValue { get; private set; }
 
         public override byte[] Encode()
         {
@@ -35,9 +33,6 @@ namespace Fudp.Messages
             ParamValue = BitConverter.ToInt32(Data, 2);
         }
 
-        public override string ToString()
-        {
-            return string.Format("{0}  [ set {{{1}}} to \"{2}\" ]", base.ToString(), ParamKey, ParamValue);
-        }
+        public override string ToString() { return string.Format("{0}  [ set {{{1}}} to \"{2}\" ]", base.ToString(), ParamKey, ParamValue); }
     }
 }
