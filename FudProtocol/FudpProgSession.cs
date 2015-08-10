@@ -50,68 +50,6 @@ namespace Fudp
 
         public IList<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
 
-        public IList<DevFile> ListFiles() { return RequestFiles().ToList(); }
-
-        private IEnumerable<DevFile> RequestFiles(int Offset = 0)
-        {
-            int counter = 0;
-            foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
-            {
-                if (file is DevFile)
-                {
-                    counter++;
-                    yield return (DevFile)file;
-                }
-                else
-                {
-                    IEnumerable<DevFile> appendix = RequestFiles(Offset + counter);
-                    foreach (DevFile subfile in appendix) yield return subfile;
-                }
-            }
-        }
-
-        public Byte[] ReadFile(DevFile File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
-        {
-            var buff = new Byte[File.Size];
-
-            int pointer = 0;
-
-            int maximumReadSize = _port.Options.LowerLayerFrameCapacity - ProgReadRq.GetHeaderLength(File.FileName);
-
-            if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(0);
-            while (pointer < buff.Length)
-            {
-                CancellationToken.ThrowIfCancellationRequested();
-
-                var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.Size - pointer, maximumReadSize));
-                ProgRead response = _port.FudpRequest(request, _timeout);
-
-                if (response.ErrorCode == 0)
-                {
-                    Buffer.BlockCopy(response.ReadData, 0, buff, pointer, response.ReadData.Length);
-                    pointer += response.ReadData.Length;
-                }
-                else
-                {
-                    switch (response.ErrorCode)
-                    {
-                        case 1:
-                            throw new FileNotFoundException(response.ErrorMessage);
-                        case 2:
-                            throw new IndexOutOfRangeException(response.ErrorMessage);
-                        case 3:
-                            throw new CanProgReadException(response.ErrorMessage);
-                        default:
-                            throw new CanProgException();
-                    }
-                }
-
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
-            }
-
-            return buff;
-        }
-
         public void DeleteFile(string FileName)
         {
             var removeRequest = new ProgRm(FileName);
@@ -119,43 +57,6 @@ namespace Fudp
             if (removeResponse.ErrorCode != 0)
                 throw new CanProgDeleteException(removeResponse.ErrorCode);
             OnFileRemoved(FileName);
-        }
-
-        /// <summary>Команда на создание файла</summary>
-        /// <param name="File">Информация о создаваемом файле</param>
-        /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
-        /// <param name="CancelToken">Токен отмены</param>
-        /// <returns></returns>
-        public void CreateFile(DevFile File, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
-        {
-            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(File), _timeout);
-            if (createAck.ErrorCode != 0)
-            {
-                switch (createAck.ErrorCode)
-                {
-                    case 1:
-                        throw new CanProgFileAlreadyExistsException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
-                    case 2:
-                        throw new CanProgMaximumFilesCountAchivedException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
-                    case 3:
-                        throw new CanProgMemoryIsOutException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
-                    case 4:
-                        throw new CanProgCreateException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
-                    default:
-                        throw new CanProgException();
-                }
-            }
-
-            int pointer = 0;
-            while (pointer < File.Size)
-            {
-                CancelToken.ThrowIfCancellationRequested();
-                pointer += Write(File, pointer);
-
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
-            }
-
-            OnFileCreated(File);
         }
 
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
@@ -197,38 +98,119 @@ namespace Fudp
             return status;
         }
 
-        private void Ping(byte i)
-        {
-            //_port.FudpRequest(new ProgPing(i), _timeout);
-        }
-
         private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
         {
             int counter = 0;
             foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
             {
-                if (file is DevFileInfo)
+                if (file is DevFile)
                 {
                     counter++;
-                    yield return (DevFileInfo)file;
+                    yield return (DevFile)file;
                 }
                 else
                 {
                     IEnumerable<DevFileInfo> appendix = RequestFiles(Offset + counter);
-                    foreach (DevFileInfo subfile in appendix) yield return subfile;
+                    foreach (DevFileInfo subfile in appendix)
+                        yield return subfile;
                 }
             }
         }
 
-        private int Write(DevFileInfo fileInfo, int offset)
+        public Byte[] ReadFile(DevFileInfo File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
         {
-            ProgWriteAck result = _port.FudpRequest(new ProgWrite(fileInfo, offset),
+            var buff = new Byte[File.Size];
+
+            int pointer = 0;
+
+            int maximumReadSize = _port.Options.LowerLayerFrameCapacity - ProgReadRq.GetHeaderLength(File.FileName);
+
+            if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(0);
+            while (pointer < buff.Length)
+            {
+                CancellationToken.ThrowIfCancellationRequested();
+
+                var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.Size - pointer, maximumReadSize));
+                ProgRead response = _port.FudpRequest(request, _timeout);
+
+                if (response.ErrorCode == 0)
+                {
+                    Buffer.BlockCopy(response.ReadData, 0, buff, pointer, response.ReadData.Length);
+                    pointer += response.ReadData.Length;
+                }
+                else
+                {
+                    switch (response.ErrorCode)
+                    {
+                        case 1:
+                            throw new FileNotFoundException(response.ErrorMessage);
+                        case 2:
+                            throw new IndexOutOfRangeException(response.ErrorMessage);
+                        case 3:
+                            throw new CanProgReadException(response.ErrorMessage);
+                        default:
+                            throw new CanProgException();
+                    }
+                }
+
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
+            }
+
+            return buff;
+        }
+
+        /// <summary>Команда на создание файла</summary>
+        /// <param name="File">Информация о создаваемом файле</param>
+        /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
+        /// <param name="CancelToken">Токен отмены</param>
+        /// <returns></returns>
+        public void CreateFile(DevFile File, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+        {
+            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(File), _timeout);
+            if (createAck.ErrorCode != 0)
+            {
+                switch (createAck.ErrorCode)
+                {
+                    case 1:
+                        throw new CanProgFileAlreadyExistsException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
+                    case 2:
+                        throw new CanProgMaximumFilesCountAchivedException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
+                    case 3:
+                        throw new CanProgMemoryIsOutException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
+                    case 4:
+                        throw new CanProgCreateException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
+                    default:
+                        throw new CanProgException();
+                }
+            }
+
+            int pointer = 0;
+            while (pointer < File.Size)
+            {
+                CancelToken.ThrowIfCancellationRequested();
+                pointer += Write(File, File.Data, pointer);
+
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
+            }
+
+            OnFileCreated(File);
+        }
+
+        private void Ping(byte i)
+        {
+            //_port.FudpRequest(new ProgPing(i), _timeout);
+        }
+
+        private int Write(DevFileInfo fileInfo, Byte[] Data, int DataOffset)
+        {
+            var request = new ProgWrite(fileInfo.FileName, Data, DataOffset, DataOffset);
+            ProgWriteAck result = _port.FudpRequest(request,
                                                     _timeout);
 
             if (result.Status != ProgWriteAck.WriteStatusKind.OK)
                 throw new CanProgWriteException(result.Status);
 
-            return new ProgWrite(fileInfo, offset).Data.Length;
+            return request.Data.Length;
         }
 
         private void OnFileCreated(DevFileInfo FileInfo) { }

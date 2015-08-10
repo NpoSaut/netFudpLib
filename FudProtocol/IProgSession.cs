@@ -31,7 +31,7 @@ namespace Fudp
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
         /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken));
+        void CreateFile(DevFile fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken));
 
         #endregion
 

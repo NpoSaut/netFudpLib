@@ -16,11 +16,11 @@ namespace Fudp.Messages
         ///     указанием отступа в буфере
         /// </summary>
         /// <param name="FileName">Имя файла</param>
+        /// <param name="DataBuffer">Буфер данных</param>
         /// <param name="TargetOffset">Отступ в программируемом устройстве</param>
         /// <param name="DataOffset">Отступ в подаваемом буфере данных</param>
-        /// <param name="DataBuffer">Буфер данных</param>
         /// <param name="MaxLength">Ограничение количества подаваемых данных</param>
-        public ProgWrite(String FileName, int TargetOffset, int DataOffset, Byte[] DataBuffer, int MaxLength = Int32.MaxValue)
+        public ProgWrite(String FileName, Byte[] DataBuffer, int TargetOffset, int DataOffset, int MaxLength = Int32.MaxValue)
             : this()
         {
             int DataLength = Math.Min(Math.Min(PacketSize - GetHeaderLength(FileName), MaxLength), DataBuffer.Length - DataOffset);
@@ -30,22 +30,6 @@ namespace Fudp.Messages
             Offset = TargetOffset;
             this.FileName = FileName;
         }
-
-        /// <summary>
-        ///     Создаёт сообщение записи для указаного файла с указанным отступом, предпологая, что указанный буфер данных
-        ///     равен буферу отправляемого файла
-        /// </summary>
-        /// <param name="FileName">Имя файла</param>
-        /// <param name="Offset">Отступ в файле на программируемом устройстве и в передаваемом буфере данных</param>
-        /// <param name="DataBuffer">Буфер данных</param>
-        public ProgWrite(String FileName, int Offset, Byte[] DataBuffer)
-            : this(FileName, Offset, 0, DataBuffer) { }
-
-        /// <summary>Создаёт сообщение записи для указаного файла с указанным отступом</summary>
-        /// <param name="File">Файл для отправки</param>
-        /// <param name="Offset">Отступ</param>
-        public ProgWrite(DevFile File, int Offset)
-            : this(File.FileName, Offset, Offset, File.Data) { }
 
         /// <summary>Данные для отправки</summary>
         public byte[] Data { get; private set; }

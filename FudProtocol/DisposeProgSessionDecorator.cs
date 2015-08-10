@@ -63,9 +63,9 @@ namespace Fudp
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
         /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = new CancellationToken())
+        public void CreateFile(DevFile fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
-            _core.CreateFile(fileInfo, ProgressAcceptor, CancelToken);
+            _core.CreateFile(fileInfo, ProgressAcceptor: ProgressAcceptor, CancelToken: CancelToken);
         }
 
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
