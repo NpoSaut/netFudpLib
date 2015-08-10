@@ -68,6 +68,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CanFudpPortProvider.cs" />
     <Compile Include="DisposeProgSessionDecorator.cs" />
     <Compile Include="Exceptions\CanProgDeleteException.cs" />
     <Compile Include="FudpProgSession.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="FudpPortOptions.cs" />
     <Compile Include="FudpRequests.cs" />
     <Compile Include="ICanProgLog.cs" />
+    <Compile Include="IFudpPortProvider.cs" />
     <Compile Include="IProgSession.cs" />
     <Compile Include="ICanProgSessionFactory.cs" />
     <Compile Include="IdentiferAttribute.cs" />
