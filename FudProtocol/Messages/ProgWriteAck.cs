@@ -1,33 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
+﻿using System.IO;
 
 namespace Fudp.Messages
 {
-    /// <summary>
-    /// Подтверждение записи
-    /// </summary>
+    /// <summary>Подтверждение записи</summary>
     [Identifer(0x0c)]
     public class ProgWriteAck : Message
     {
-        public enum WriteStatusKind { OK, OutOfFile, Unknown }
-        
+        public enum WriteStatusKind
+        {
+            OK = 0,
+            OutOfFile = 1,
+            FileDoesNotExist = 2,
+            Unknown = 255
+        }
+
+        public ProgWriteAck(WriteStatusKind Status = WriteStatusKind.OK) { this.Status = Status; }
+
         /// <summary>Статус записи</summary>
         public WriteStatusKind Status { get; private set; }
 
-        public ProgWriteAck() : base() { }
-        public ProgWriteAck(WriteStatusKind Status) : this()
-        {
-            this.Status = Status;
-        }
-
-        protected override void Decode(byte[] Data)
-        {
-            Status = (WriteStatusKind) Data[1];
-        }
+        protected override void Decode(byte[] Data) { Status = (WriteStatusKind)Data[1]; }
 
         public override byte[] Encode()
         {

@@ -70,6 +70,16 @@ namespace Fudp
                 Channel == t.Channel;
         }
 
+        public bool MatchesMask(DeviceTicket MaskTicket)
+        {
+            return
+                (MaskTicket.BlockId == 0 || BlockId == MaskTicket.BlockId) &&
+                (MaskTicket.Modification == 0 || Modification == MaskTicket.Modification) &&
+                (MaskTicket.Module == 0 || Module == MaskTicket.Module) &&
+                (MaskTicket.BlockSerialNumber == 0 || BlockSerialNumber == MaskTicket.BlockSerialNumber) &&
+                (MaskTicket.Channel == 0 || Channel == MaskTicket.Channel);
+        }
+
         public override int GetHashCode()
         {
             return this.ToString().GetHashCode();

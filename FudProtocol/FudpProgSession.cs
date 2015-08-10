@@ -50,9 +50,29 @@ namespace Fudp
 
         public IList<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
 
-        public Byte[] ReadFile(DevFileInfo File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
+        public IList<DevFile> ListFiles() { return RequestFiles().ToList(); }
+
+        private IEnumerable<DevFile> RequestFiles(int Offset = 0)
         {
-            var buff = new Byte[File.FileSize];
+            int counter = 0;
+            foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
+            {
+                if (file is DevFile)
+                {
+                    counter++;
+                    yield return (DevFile)file;
+                }
+                else
+                {
+                    IEnumerable<DevFile> appendix = RequestFiles(Offset + counter);
+                    foreach (DevFile subfile in appendix) yield return subfile;
+                }
+            }
+        }
+
+        public Byte[] ReadFile(DevFile File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
+        {
+            var buff = new Byte[File.Size];
 
             int pointer = 0;
 
@@ -63,7 +83,7 @@ namespace Fudp
             {
                 CancellationToken.ThrowIfCancellationRequested();
 
-                var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.FileSize - pointer, maximumReadSize));
+                var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.Size - pointer, maximumReadSize));
                 ProgRead response = _port.FudpRequest(request, _timeout);
 
                 if (response.ErrorCode == 0)
@@ -86,7 +106,7 @@ namespace Fudp
                     }
                 }
 
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.FileSize)));
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
             }
 
             return buff;
@@ -102,41 +122,40 @@ namespace Fudp
         }
 
         /// <summary>Команда на создание файла</summary>
-        /// <param name="fileInfo">Информация о создаваемом файле</param>
+        /// <param name="File">Информация о создаваемом файле</param>
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
         /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        public void CreateFile(DevFileInfo fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+        public void CreateFile(DevFile File, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
         {
-            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(fileInfo.FileName, fileInfo.FileSize, FudpCrc.CalcCrc(fileInfo.Data)),
-                                                        _timeout);
+            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(File), _timeout);
             if (createAck.ErrorCode != 0)
             {
                 switch (createAck.ErrorCode)
                 {
                     case 1:
-                        throw new CanProgFileAlreadyExistsException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgFileAlreadyExistsException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     case 2:
-                        throw new CanProgMaximumFilesCountAchivedException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgMaximumFilesCountAchivedException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     case 3:
-                        throw new CanProgMemoryIsOutException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgMemoryIsOutException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     case 4:
-                        throw new CanProgCreateException(createAck.ErrorMsg[createAck.ErrorCode]);
+                        throw new CanProgCreateException(ProgCreateAck.ErrorMsg[createAck.ErrorCode]);
                     default:
                         throw new CanProgException();
                 }
             }
 
             int pointer = 0;
-            while (pointer < fileInfo.FileSize)
+            while (pointer < File.Size)
             {
                 CancelToken.ThrowIfCancellationRequested();
-                pointer += Write(fileInfo, pointer);
+                pointer += Write(File, pointer);
 
-                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / fileInfo.FileSize)));
+                if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
             }
 
-            OnFileCreated(fileInfo);
+            OnFileCreated(File);
         }
 
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>

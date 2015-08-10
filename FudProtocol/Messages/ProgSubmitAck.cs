@@ -16,6 +16,8 @@ namespace Fudp.Messages
         CancelSuccessed = 2,
         /// <summary>Не удалось отменить изменения</summary>
         CancelFails = 3,
+        /// <summary>Работаю, подожди</summary>
+        Wait = 4,
         /// <summary>Неизвестный код состояния</summary>
         Unknown = -1
     }

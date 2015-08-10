@@ -29,6 +29,13 @@ namespace Fudp.Messages
             }
         }
 
-        protected override void Decode(byte[] Data) { }
+        protected override void Decode(byte[] Data)
+        {
+            using (var br = new BinaryReader(new MemoryStream(Data)))
+            {
+                Offset = br.ReadUInt16();
+                Count = br.ReadUInt16();
+            }
+        }
     }
 }

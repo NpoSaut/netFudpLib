@@ -85,7 +85,7 @@
     <Compile Include="Exceptions\FudpIdentiferMismatchException.cs" />
     <Compile Include="Exceptions\CanProgLimitConnectExcepion.cs" />
     <Compile Include="Exceptions\CanProgReadException.cs" />
-    <Compile Include="DevFileInfo.cs" />
+    <Compile Include="DevFile.cs" />
     <Compile Include="DeviceTicket.cs" />
     <Compile Include="Exceptions\FudpReceiveTimeoutException.cs" />
     <Compile Include="Exceptions\FudpUnknownIdentiferExceptoin.cs" />
@@ -129,6 +129,7 @@
     <Compile Include="Messages\ProgWriteAck.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CanProg.cs" />
+    <Compile Include="PropertyKind.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Can\Communications.Protocols.IsoTP\Communications.Protocols.IsoTP.csproj">

@@ -8,40 +8,21 @@ namespace Fudp.Messages
     [Identifer(0x08)]
     public class ProgRmAck : Message
     {
-        public ProgRmAck()
-        { }
+        public ProgRmAck(int ErrorCode = 0) { this.ErrorCode = ErrorCode; }
 
-        /// <summary>
-        /// Код ошибки
-        /// </summary>
-        private int errorCode;
-        public int ErrorCode
-        {
-            get { return errorCode; }
-            set { ;}
-        }
-
-        private Byte[] buff;
-        public byte[] Buff
-        {
-            get { return buff; }
-            set { ;}
-        }
+        public int ErrorCode { get; private set; }
 
         public override byte[] Encode()
         {
-            buff = new byte[2];
+            var buff = new byte[2];
             buff[0] = MessageIdentifer;
-            buff[1] = (byte)errorCode;
+            buff[1] = (byte)ErrorCode;
             return buff;
         }
-        /// <summary>
-        /// Декодирование ответного сообщения
-        /// </summary>
-        /// <param name="Data">Принятый массив байт</param>
+
         protected override void Decode(byte[] Data)
         {
-            errorCode = Data[1];
+            ErrorCode = Data[1];
         }
     }
 }

@@ -10,16 +10,13 @@ namespace Fudp.Messages
     public class ProgStatus : Message
     {
         /// <summary>Словарь свойств</summary>
-        public Dictionary<int, int> Properties { get; private set; }
-
-        /// <summary>Количество свойств</summary>
-        public int PropertiesCount { get; set; }
+        public IDictionary<int, int> Properties { get; set; }
 
         public byte[] Buff { get; private set; }
 
         public override byte[] Encode()
         {
-            Buff = new byte[5 * PropertiesCount + 1];
+            Buff = new byte[5 * Properties.Count + 1];
             Buff[0] = 0x02;
             throw new NotImplementedException();
             //Buffer.BlockCopy(BitConverter.GetBytes(properties[pKeys.Version]), 1, b, 0, intSize);
