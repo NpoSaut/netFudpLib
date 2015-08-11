@@ -12,15 +12,19 @@ namespace Fudp.Messages
         /// <summary>Словарь свойств</summary>
         public IDictionary<int, int> Properties { get; set; }
 
-        public byte[] Buff { get; private set; }
-
         public override byte[] Encode()
         {
-            Buff = new byte[5 * Properties.Count + 1];
-            Buff[0] = 0x02;
-            throw new NotImplementedException();
-            //Buffer.BlockCopy(BitConverter.GetBytes(properties[pKeys.Version]), 1, b, 0, intSize);
-            return Buff;
+            var ms = new MemoryStream();
+            var sw = new BinaryWriter(ms);
+
+            sw.Write((byte)0x02);
+            foreach (var property in Properties)
+            {
+                sw.Write((byte)property.Key);
+                sw.Write((int)property.Value);
+            }
+
+            return ms.ToArray();
         }
 
         /// <summary>Декодирование сообщения</summary>

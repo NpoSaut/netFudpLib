@@ -3,7 +3,7 @@
     public enum PropertyKind : byte
     {
         FirmwareVersion = 1,
-        FrimwareSubversion = 2,
+        FirmwareSubversion = 2,
         FirmwareUpdateDate = 3,
         FrimwareChecksum = 6,
         FirmwareLabel = 7,
