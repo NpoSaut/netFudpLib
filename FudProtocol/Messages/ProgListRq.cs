@@ -5,6 +5,8 @@ namespace Fudp.Messages
     [Identifer(0x03)]
     public class ProgListRq : Message
     {
+        public ProgListRq() { }
+
         /// <summary>Запроса списка фалов</summary>
         public ProgListRq(ushort Offset = 0, ushort Count = 0)
         {
