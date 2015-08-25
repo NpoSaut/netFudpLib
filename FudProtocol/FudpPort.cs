@@ -40,6 +40,7 @@ namespace Fudp
         {
             _rxDisposer.Dispose();
             _tx.Dispose();
+            _isoTpConnection.Dispose();
         }
 
         /// <summary>Поток входящих сообщений</summary>
