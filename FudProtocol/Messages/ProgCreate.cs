@@ -6,6 +6,9 @@ namespace Fudp.Messages
     [Identifer(0x09)]
     public class ProgCreate : Message
     {
+        [Obsolete("Только для внутренних нужд")]
+        public ProgCreate() { }
+
         /// <summary>Команда на создание файла</summary>
         public ProgCreate(DevFileInfo FileInfo) { this.FileInfo = FileInfo; }
 
