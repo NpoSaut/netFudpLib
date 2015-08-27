@@ -35,9 +35,15 @@ namespace Fudp.Messages
         {
             using (var br = new BinaryReader(new MemoryStream(Data)))
             {
+                br.ReadByte();
                 Offset = br.ReadUInt16();
                 Count = br.ReadUInt16();
             }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0} [ Offset: {1}, Count: {2} ]", base.ToString(), Offset, Count);
         }
     }
 }

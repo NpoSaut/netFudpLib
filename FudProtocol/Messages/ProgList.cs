@@ -37,10 +37,10 @@ namespace Fudp.Messages
                     if (fileNode is DevFileInfo)
                     {
                         var file = (DevFileInfo)fileNode;
-                        writer.Write((byte)file.FileName.Length);
+                        writer.Write((Byte)file.FileName.Length);
                         writer.Write(file.FileName.ToCharArray());
-                        writer.Write(file.Size);
-                        writer.Write(file.ControlSum);
+                        writer.Write((UInt32)file.Size);
+                        writer.Write((UInt32)file.ControlSum);
                     }
                     if (fileNode is DevFileListIncompleteTransactionFlag)
                     {
