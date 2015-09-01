@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Reactive.Linq;
-using Communications;
 using Communications.Can;
+using Communications.PortHelpers;
 using Communications.Protocols.IsoTP;
 using Fudp.Messages;
 

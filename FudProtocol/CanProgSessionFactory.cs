@@ -1,9 +1,9 @@
 using System;
-using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Communications.Can;
+using Communications.PortHelpers;
 using Communications.Protocols.IsoTP;
 using Communications.Protocols.IsoTP.Exceptions;
 using Communications.Protocols.IsoTP.Frames;
@@ -24,7 +24,7 @@ namespace Fudp
 
         public IProgSession OpenSession(ICanPort CanPort, DeviceTicket Target)
         {
-            IObserver<Message> initChannel = Observer.Create<Message>(f => CanPort.Tx.OnNext(new SingleFrame(f.Encode()).GetCanFrame(CanProg.FuInit)));
+            IObserver<Message> initChannel = Observer.Create<Message>(f => CanPort.BeginSend(new SingleFrame(f.Encode()).GetCanFrame(CanProg.FuInit)).Wait());
 
             ProgStatus status;
             using (IIsoTpConnection connectIsoTpPort = CanPort.OpenIsoTpConnection(CanProg.FuProg, CanProg.FuDev, new IsoTpConnectionParameters()))
@@ -41,7 +41,7 @@ namespace Fudp
 
         private ProgStatus Connect(IFudpPort Port, IObserver<Message> InitChannel, DeviceTicket Target)
         {
-            IConnectableObservable<Message> flow = Port.Rx.Replay();
+            IConnectableObservable<Message> flow = Port.Rx.WaitForTransactionCompleated().Replay();
             using (flow.Connect())
             {
                 InitChannel.OnNext(new ProgInit(Target));
