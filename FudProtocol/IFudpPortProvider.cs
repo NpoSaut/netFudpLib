@@ -4,6 +4,6 @@ namespace Fudp
 {
     public interface IFudpPortProvider
     {
-        IFudpPort OpenPort(IsoTpConnectionParameters IsoTpParameters);
+        IFudpPort OpenPort();
     }
 }
