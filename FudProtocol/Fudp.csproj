@@ -75,6 +75,7 @@
     <Compile Include="CanFudpPortProvider.cs" />
     <Compile Include="DisposeProgSessionDecorator.cs" />
     <Compile Include="Exceptions\CanProgDeleteException.cs" />
+    <Compile Include="Exceptions\FudpTransportException.cs" />
     <Compile Include="FudpProgSession.cs" />
     <Compile Include="CanProgSessionFactory.cs" />
     <Compile Include="DeviceLocator.cs" />
@@ -82,7 +83,6 @@
     <Compile Include="Exceptions\CanProgException.cs" />
     <Compile Include="Exceptions\CanProgFileopException.cs" />
     <Compile Include="Exceptions\CanProgFlowOccupiedException.cs" />
-    <Compile Include="Exceptions\CanProgTransportException.cs" />
     <Compile Include="Exceptions\CanProgUnCompatibleVersionException.cs" />
     <Compile Include="Exceptions\FudpUnexpectedFrameReceivedException.cs" />
     <Compile Include="Exceptions\CanProgWriteException.cs" />
