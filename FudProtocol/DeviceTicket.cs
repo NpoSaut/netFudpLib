@@ -70,6 +70,11 @@ namespace Fudp
                 Channel == t.Channel;
         }
 
+        public bool IsBroadcastTicket
+        {
+            get { return BlockId * Modification * Module * BlockSerialNumber * Channel == 0; }
+        }
+
         public bool MatchesMask(DeviceTicket MaskTicket)
         {
             return
