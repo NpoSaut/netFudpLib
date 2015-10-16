@@ -4,7 +4,7 @@ namespace Fudp
 {
     public abstract class DevFileListNode { }
 
-    internal class DevFileListIncompleteTransactionFlag : DevFileListNode
+    public class DevFileListIncompleteTransactionFlag : DevFileListNode
     {
         public DevFileListIncompleteTransactionFlag(uint Remaining) { this.Remaining = Remaining; }
         public uint Remaining { get; private set; }

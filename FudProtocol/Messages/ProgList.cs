@@ -87,5 +87,7 @@ namespace Fudp.Messages
             return string.Format("{0} ({1} файлов: {2}{3})", base.ToString(), Files.Count, string.Join(", ", Files.Select(f => f.ToString()).Take(5)),
                                  Files.Count > 5 ? " ..." : "");
         }
+
+        public static int CalcAppendixSize() { return 1 + 4 + 1; }
     }
 }
