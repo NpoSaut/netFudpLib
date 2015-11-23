@@ -88,6 +88,6 @@ namespace Fudp.Messages
                                  Files.Count > 5 ? " ..." : "");
         }
 
-        public static int CalcAppendixSize() { return 1 + 4 + 1; }
+        public static int CalcAppendixSize() { return 1 + 4 + 4; }
     }
 }
