@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 
 namespace Fudp.Messages
@@ -18,13 +19,16 @@ namespace Fudp.Messages
         /// <returns></returns>
         public override byte[] Encode()
         {
-            var buff = new Byte[10 + FileInfo.FileName.Length];
-            buff[0] = MessageIdentifer; //Идентификатор сообщения
-            buff[1] = (byte)FileInfo.FileName.Length;
-            Buffer.BlockCopy(Encoding.GetEncoding(1251).GetBytes(FileInfo.FileName), 0, buff, 2, FileInfo.FileName.Length);
-            Buffer.BlockCopy(BitConverter.GetBytes(FileInfo.Size), 0, buff, 2 + FileInfo.FileName.Length, intSize);
-            Buffer.BlockCopy(BitConverter.GetBytes(FileInfo.ControlSum), 0, buff, 6 + FileInfo.FileName.Length, intSize);
-            return buff;
+            byte[] fileNameBytes = Encoding.GetEncoding(1251).GetBytes(FileInfo.FileName);
+
+            var ms = new MemoryStream();
+            var w = new BinaryWriter(ms);
+            w.Write(MessageIdentifer);
+            w.Write((byte)fileNameBytes.Length);
+            w.Write(fileNameBytes);
+            w.Write((uint)FileInfo.Size);
+            w.Write((uint)FileInfo.ControlSum);
+            return ms.ToArray();
         }
 
         protected override void Decode(byte[] Data)
