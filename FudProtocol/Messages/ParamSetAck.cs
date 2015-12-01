@@ -14,7 +14,9 @@ namespace Fudp.Messages
                                                                                        { 2, "Превышено максимальное количество свойств" }
                                                                                    };
 
-        public ParamSetAck(int Status = 0) { ErrorCode = Status; }
+        public ParamSetAck() : this(-1) { }
+
+        public ParamSetAck(int Status) { ErrorCode = Status; }
 
         public String ErrorMessage
         {
