@@ -14,7 +14,8 @@ namespace Fudp.Messages
                                                                         { 4, "Ошибка создания" }
                                                                     };
 
-        public ProgCreateAck(int ErrorCode = 0) { this.ErrorCode = ErrorCode; }
+        public ProgCreateAck() : this(0) { }
+        public ProgCreateAck(int ErrorCode) { this.ErrorCode = ErrorCode; }
 
         public static Dictionary<int, string> ErrorMsg
         {
