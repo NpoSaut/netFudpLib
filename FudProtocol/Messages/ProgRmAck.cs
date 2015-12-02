@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Fudp.Messages
+﻿namespace Fudp.Messages
 {
     [Identifer(0x08)]
     public class ProgRmAck : Message
     {
+        public ProgRmAck() : this(-1) { }
         public ProgRmAck(int ErrorCode = 0) { this.ErrorCode = ErrorCode; }
 
         public int ErrorCode { get; private set; }
@@ -20,9 +16,6 @@ namespace Fudp.Messages
             return buff;
         }
 
-        protected override void Decode(byte[] Data)
-        {
-            ErrorCode = Data[1];
-        }
+        protected override void Decode(byte[] Data) { ErrorCode = Data[1]; }
     }
 }
