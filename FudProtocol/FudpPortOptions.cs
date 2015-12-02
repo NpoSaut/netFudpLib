@@ -1,4 +1,5 @@
 ﻿using Communications;
+using Communications.Options;
 using Fudp.Messages;
 
 namespace Fudp
