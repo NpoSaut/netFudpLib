@@ -103,10 +103,10 @@ namespace Fudp
             int counter = 0;
             foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
             {
-                if (file is DevFile)
+                if (file is DevFileInfo)
                 {
                     counter++;
-                    yield return (DevFile)file;
+                    yield return (DevFileInfo)file;
                 }
                 else
                 {
