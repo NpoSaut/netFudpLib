@@ -14,7 +14,8 @@ namespace Fudp
         #region Files
 
         /// <summary>Запрашивает список файлов на устройстве</summary>
-        IList<DevFileInfo> ListFiles();
+        /// <param name="CancellationToken"></param>
+        IList<DevFileInfo> ListFiles(CancellationToken CancellationToken);
 
         /// <summary>Производит чтение содержимого файла</summary>
         /// <param name="File">Файл для чтения</param>
@@ -24,14 +25,15 @@ namespace Fudp
 
         /// <summary>Удаляет указанный файл с устройства</summary>
         /// <param name="FileName">Путь к файлу для удаления</param>
-        void DeleteFile(string FileName);
+        /// <param name="CancellationToken"></param>
+        void DeleteFile(string FileName, CancellationToken CancellationToken);
 
         /// <summary>Команда на создание файла</summary>
         /// <param name="fileInfo">Информация о создаваемом файле</param>
+        /// <param name="CancellationToken">Токен отмены</param>
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
-        /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        void CreateFile(DevFile fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken));
+        void CreateFile(DevFile fileInfo, CancellationToken CancellationToken, IProgressAcceptor ProgressAcceptor = null);
 
         #endregion
 
@@ -40,15 +42,17 @@ namespace Fudp
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
         /// <param name="paramKey">Ключ</param>
         /// <param name="paramValue">Значение свойства</param>
-        void SetProperty(byte paramKey, int paramValue);
+        /// <param name="CancellationToken"></param>
+        void SetProperty(byte paramKey, int paramValue, CancellationToken CancellationToken);
 
         /// <summary>Удаление записи из словаря свойств</summary>
         /// <param name="paramKey">Ключ</param>
-        void DeleteProperty(byte paramKey);
+        /// <param name="CancellationToken"></param>
+        void DeleteProperty(byte paramKey, CancellationToken CancellationToken);
 
         #endregion
 
         /// <summary>Отправляет запрос на завершение сеанса программирования</summary>
-        SubmitAckStatus Submit(SubmitStatus Status);
+        SubmitAckStatus Submit(SubmitStatus Status, CancellationToken CancellationToken);
     }
 }

@@ -2,11 +2,13 @@ using System;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using Communications.Can;
 using Communications.PortHelpers;
 using Communications.Protocols.IsoTP;
 using Communications.Protocols.IsoTP.Exceptions;
 using Communications.Protocols.IsoTP.Frames;
+using Communications.Transactions;
 using Fudp.Exceptions;
 using Fudp.Messages;
 using Polly;
@@ -22,9 +24,11 @@ namespace Fudp
                 .Or<TimeoutException>()
                 .RetryForever();
 
-        public IProgSession OpenSession(ICanPort CanPort, DeviceTicket Target)
+        public IProgSession OpenSession(ICanPort CanPort, DeviceTicket Target, CancellationToken CancellationToken)
         {
-            IObserver<Message> initChannel = Observer.Create<Message>(f => CanPort.BeginSend(new SingleFrame(f.Encode()).GetCanFrame(CanProg.FuInit)).Wait());
+            IObserver<Message> initChannel =
+                Observer.Create<Message>(f => CanPort.BeginSend(new SingleFrame(f.Encode()).GetCanFrame(CanProg.FuInit))
+                                                     .Wait(CancellationToken));
 
             ProgStatus status;
             using (IIsoTpConnection connectIsoTpPort = CanPort.OpenIsoTpConnection(CanProg.FuProg, CanProg.FuDev, new IsoTpConnectionParameters()))
@@ -32,20 +36,24 @@ namespace Fudp
                 using (IFudpPort connectFudpPort = new FudpPort(connectIsoTpPort))
                 {
                     // ReSharper disable once AccessToDisposedClosure
-                    status = _retryPolicy.Execute(() => Connect(connectFudpPort, initChannel, Target));
-                    //status = Connect(connectFudpPort, initChannel, Target);
+                    status = _retryPolicy.Execute(() => Connect(connectFudpPort, initChannel, Target, CancellationToken));
                 }
             }
             return CreateSession(status, CanPort, Target);
         }
 
-        private ProgStatus Connect(IFudpPort Port, IObserver<Message> InitChannel, DeviceTicket Target)
+        private ProgStatus Connect(IFudpPort Port, IObserver<Message> InitChannel, DeviceTicket Target, CancellationToken CancellationToken)
         {
-            IConnectableObservable<Message> flow = Port.Rx.WaitForTransactionCompleated().Replay();
+            CancellationToken.ThrowIfCancellationRequested();
+            //return Port.FudpRequest(new ProgInit(Target), TimeSpan.FromMilliseconds(500), CancellationToken);
+
+            IConnectableObservable<ITransaction<Message>> flow = Port.Rx.Replay();
             using (flow.Connect())
             {
                 InitChannel.OnNext(new ProgInit(Target));
-                return flow.OfType<ProgStatus>().Timeout(TimeSpan.FromMilliseconds(500)).First();
+                return flow.Timeout(TimeSpan.FromMilliseconds(500))
+                           .WaitForTransactionCompleated(TimeSpan.FromMilliseconds(500), CancellationToken)
+                           .OfType<ProgStatus>().First();
             }
         }
 

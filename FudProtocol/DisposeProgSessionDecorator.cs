@@ -37,9 +37,10 @@ namespace Fudp
         }
 
         /// <summary>Запрашивает список файлов на устройстве</summary>
-        public IList<DevFileInfo> ListFiles()
+        /// <param name="CancellationToken"></param>
+        public IList<DevFileInfo> ListFiles(CancellationToken CancellationToken)
         {
-            return _core.ListFiles();
+            return _core.ListFiles(CancellationToken);
         }
 
         /// <summary>Производит чтение содержимого файла</summary>
@@ -53,40 +54,43 @@ namespace Fudp
 
         /// <summary>Удаляет указанный файл с устройства</summary>
         /// <param name="FileName">Путь к файлу для удаления</param>
-        public void DeleteFile(string FileName)
+        /// <param name="CancellationToken"></param>
+        public void DeleteFile(string FileName, CancellationToken CancellationToken)
         {
-            _core.DeleteFile(FileName);
+            _core.DeleteFile(FileName, CancellationToken);
         }
 
         /// <summary>Команда на создание файла</summary>
         /// <param name="fileInfo">Информация о создаваемом файле</param>
+        /// <param name="CancellationToken">Токен отмены</param>
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
-        /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        public void CreateFile(DevFile fileInfo, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+        public void CreateFile(DevFile fileInfo, CancellationToken CancellationToken = default(CancellationToken), IProgressAcceptor ProgressAcceptor = null)
         {
-            _core.CreateFile(fileInfo, ProgressAcceptor: ProgressAcceptor, CancelToken: CancelToken);
+            _core.CreateFile(fileInfo, CancellationToken: CancellationToken, ProgressAcceptor: ProgressAcceptor);
         }
 
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
         /// <param name="paramKey">Ключ</param>
         /// <param name="paramValue">Значение свойства</param>
-        public void SetProperty(byte paramKey, int paramValue)
+        /// <param name="CancellationToken"></param>
+        public void SetProperty(byte paramKey, int paramValue, CancellationToken CancellationToken)
         {
-            _core.SetProperty(paramKey, paramValue);
+            _core.SetProperty(paramKey, paramValue, CancellationToken);
         }
 
         /// <summary>Удаление записи из словаря свойств</summary>
         /// <param name="paramKey">Ключ</param>
-        public void DeleteProperty(byte paramKey)
+        /// <param name="CancellationToken"></param>
+        public void DeleteProperty(byte paramKey, CancellationToken CancellationToken)
         {
-            _core.DeleteProperty(paramKey);
+            _core.DeleteProperty(paramKey, CancellationToken);
         }
 
         /// <summary>Отправляет запрос на завершение сеанса программирования</summary>
-        public SubmitAckStatus Submit(SubmitStatus Status)
+        public SubmitAckStatus Submit(SubmitStatus Status, CancellationToken CancellationToken)
         {
-            return _core.Submit(Status);
+            return _core.Submit(Status, CancellationToken);
         }
     }
 }

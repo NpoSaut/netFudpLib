@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 using Communications.Can;
 
 namespace Fudp
@@ -8,11 +10,8 @@ namespace Fudp
         /// <summary>Находит в сети все устройства с заданным шаблоном билетов.</summary>
         /// <param name="Template">Шаблон билета устройства</param>
         /// <param name="Port">Can-порт, через который осуществляется работа</param>
-        /// <param name="Timeout">
-        ///     Таймаут (в милисекундах). Таймаут отсчитывается с момента получения последней IsoTP-транзакции, а
-        ///     не с момента начала опроса
-        /// </param>
-        /// <returns></returns>
-        IList<DeviceTicket> LocateDevices(DeviceTicket Template, ICanPort Port, int Timeout = 100);
+        /// <param name="Timeout">Таймаут (в милисекундах)</param>
+        /// <param name="CancellationToken">Токен отмены операции</param>
+        IList<DeviceTicket> LocateDevices(DeviceTicket Template, ICanPort Port, TimeSpan Timeout, CancellationToken CancellationToken);
     }
 }

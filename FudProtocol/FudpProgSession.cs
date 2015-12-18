@@ -34,26 +34,26 @@ namespace Fudp
         public void Dispose()
         {
             _pinger.Dispose();
-            if (!_submited)
-            {
-                try
-                {
-                    // TODO: Убедиться в безопасности Dispose()
-                    // Убедиться в том, что если Dispose() возникает из-за отключения АППИ, мы не зависнем на этом месте из-за того,
-                    // что будем долго пытаться отправить Submit();
-                    Submit(SubmitStatus.Cancel);
-                }
-                    // ReSharper disable once EmptyGeneralCatchClause
-                catch { }
-            }
+            //if (!_submited)
+            //{
+            //    try
+            //    {
+            //        // TODO: Убедиться в безопасности Dispose()
+            //        // Убедиться в том, что если Dispose() возникает из-за отключения АППИ, мы не зависнем на этом месте из-за того,
+            //        // что будем долго пытаться отправить Submit();
+            //        Submit(SubmitStatus.Cancel, CancellationToken.None);
+            //    }
+            //        // ReSharper disable once EmptyGeneralCatchClause
+            //    catch { }
+            //}
         }
 
-        public IList<DevFileInfo> ListFiles() { return RequestFiles().ToList(); }
+        public IList<DevFileInfo> ListFiles(CancellationToken CancellationToken) { return RequestFiles(CancellationToken).ToList(); }
 
-        public void DeleteFile(string FileName)
+        public void DeleteFile(string FileName, CancellationToken CancellationToken)
         {
             var removeRequest = new ProgRm(FileName);
-            ProgRmAck removeResponse = _port.FudpRequest(removeRequest, _timeout);
+            ProgRmAck removeResponse = _port.FudpRequest(removeRequest, _timeout, CancellationToken);
             if (removeResponse.ErrorCode != 0)
                 throw new CanProgDeleteException(removeResponse.ErrorCode);
             OnFileRemoved(FileName);
@@ -62,10 +62,11 @@ namespace Fudp
         /// <summary>Команда на создание или изменение записи в словаре свойств</summary>
         /// <param name="paramKey">Ключ</param>
         /// <param name="paramValue">Значение свойства</param>
-        public void SetProperty(byte paramKey, int paramValue)
+        /// <param name="CancellationToken">Токен отмены</param>
+        public void SetProperty(byte paramKey, int paramValue, CancellationToken CancellationToken)
         {
             ParamSetAck psa = _port.FudpRequest(new ParamSetRq(paramKey, paramValue),
-                                                _timeout);
+                                                _timeout, CancellationToken);
 
             if (psa.ErrorCode != 0)
                 throw new CanProgCreateException(psa.ErrorMessage);
@@ -74,9 +75,10 @@ namespace Fudp
 
         /// <summary>Удаление записи из словаря свойств</summary>
         /// <param name="paramKey">Ключ</param>
-        public void DeleteProperty(byte paramKey)
+        /// <param name="CancellationToken">Токен отмены</param>
+        public void DeleteProperty(byte paramKey, CancellationToken CancellationToken)
         {
-            ParamRmAck pra = _port.FudpRequest(new ParamRmRq(paramKey), _timeout);
+            ParamRmAck pra = _port.FudpRequest(new ParamRmRq(paramKey), _timeout, CancellationToken);
             switch (pra.ErrorCode)
             {
                 case 0:
@@ -87,34 +89,15 @@ namespace Fudp
         }
 
         /// <summary>Отправляет запрос на завершение сеанса программирования</summary>
-        public SubmitAckStatus Submit(SubmitStatus Status)
+        public SubmitAckStatus Submit(SubmitStatus Status, CancellationToken CancellationToken)
         {
             var submitMessage = new ProgSubmit(Status);
             ProgSubmitAck submitAnswer = _port.FudpRequest(submitMessage,
-                                                           Status == SubmitStatus.Submit ? TimeSpan.FromSeconds(2) : _timeout);
+                                                           Status == SubmitStatus.Submit ? TimeSpan.FromSeconds(2) : _timeout, CancellationToken);
             SubmitAckStatus status = submitAnswer.Status;
             Console.WriteLine("SUBMIT STATUS: {0}", status);
             _submited = true;
             return status;
-        }
-
-        private IEnumerable<DevFileInfo> RequestFiles(int Offset = 0)
-        {
-            int counter = 0;
-            foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout).Files)
-            {
-                if (file is DevFileInfo)
-                {
-                    counter++;
-                    yield return (DevFileInfo)file;
-                }
-                else
-                {
-                    IEnumerable<DevFileInfo> appendix = RequestFiles(Offset + counter);
-                    foreach (DevFileInfo subfile in appendix)
-                        yield return subfile;
-                }
-            }
         }
 
         public Byte[] ReadFile(DevFileInfo File, IProgressAcceptor ProgressAcceptor, CancellationToken CancellationToken)
@@ -131,7 +114,7 @@ namespace Fudp
                 CancellationToken.ThrowIfCancellationRequested();
 
                 var request = new ProgReadRq(File.FileName, pointer, Math.Min(File.Size - pointer, maximumReadSize));
-                ProgRead response = _port.FudpRequest(request, _timeout);
+                ProgRead response = _port.FudpRequest(request, _timeout, CancellationToken);
 
                 if (response.ErrorCode == 0)
                 {
@@ -161,12 +144,12 @@ namespace Fudp
 
         /// <summary>Команда на создание файла</summary>
         /// <param name="File">Информация о создаваемом файле</param>
+        /// <param name="CancellationToken">Токен отмены</param>
         /// <param name="ProgressAcceptor">Приёмник прогресса выполнения файла</param>
-        /// <param name="CancelToken">Токен отмены</param>
         /// <returns></returns>
-        public void CreateFile(DevFile File, IProgressAcceptor ProgressAcceptor = null, CancellationToken CancelToken = default(CancellationToken))
+        public void CreateFile(DevFile File, CancellationToken CancellationToken, IProgressAcceptor ProgressAcceptor = null)
         {
-            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(File), _timeout);
+            ProgCreateAck createAck = _port.FudpRequest(new ProgCreate(File), _timeout, CancellationToken);
             if (createAck.ErrorCode != 0)
             {
                 switch (createAck.ErrorCode)
@@ -187,8 +170,8 @@ namespace Fudp
             int pointer = 0;
             while (pointer < File.Size)
             {
-                CancelToken.ThrowIfCancellationRequested();
-                pointer += Write(File, File.Data, pointer);
+                CancellationToken.ThrowIfCancellationRequested();
+                pointer += Write(File, File.Data, pointer, CancellationToken);
 
                 if (ProgressAcceptor != null) ProgressAcceptor.OnProgressChanged(Math.Min(1, ((double)pointer / File.Size)));
             }
@@ -196,16 +179,35 @@ namespace Fudp
             OnFileCreated(File);
         }
 
+        private IEnumerable<DevFileInfo> RequestFiles(CancellationToken CancellationToken, int Offset = 0)
+        {
+            int counter = 0;
+            foreach (DevFileListNode file in _port.FudpRequest(new ProgListRq((ushort)Offset), _timeout, CancellationToken).Files)
+            {
+                if (file is DevFileInfo)
+                {
+                    counter++;
+                    yield return (DevFileInfo)file;
+                }
+                else
+                {
+                    IEnumerable<DevFileInfo> appendix = RequestFiles(CancellationToken, Offset + counter);
+                    foreach (DevFileInfo subfile in appendix)
+                        yield return subfile;
+                }
+            }
+        }
+
         private void Ping(byte i)
         {
             //_port.FudpRequest(new ProgPing(i), _timeout);
         }
 
-        private int Write(DevFileInfo fileInfo, Byte[] Data, int DataOffset)
+        private int Write(DevFileInfo fileInfo, byte[] Data, int DataOffset, CancellationToken CancellationToken)
         {
             var request = new ProgWrite(fileInfo.FileName, Data, DataOffset, DataOffset);
             ProgWriteAck result = _port.FudpRequest(request,
-                                                    _timeout);
+                                                    _timeout, CancellationToken);
 
             if (result.Status != ProgWriteAck.WriteStatusKind.OK)
                 throw new CanProgWriteException(result.Status);
