@@ -37,6 +37,10 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NLog.4.3.1\lib\net40\NLog.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -64,7 +68,6 @@
     <Compile Include="Exceptions\FudpUnknownIdentiferExceptoin.cs" />
     <Compile Include="FudpCrc.cs" />
     <Compile Include="FudpFileStream.cs" />
-    <Compile Include="ICanProgLog.cs" />
     <Compile Include="IdentiferAttribute.cs" />
     <Compile Include="IProgressAcceptor.cs" />
     <Compile Include="Messages\ParamRmAck.cs" />
@@ -104,6 +107,9 @@
       <Project>{A45417B6-4547-4E98-B69E-4CB1CFE45F61}</Project>
       <Name>IsoTP</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
