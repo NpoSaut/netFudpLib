@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Fudp.Exceptions;
 
 namespace Fudp.Messages
 {
@@ -36,18 +36,33 @@ namespace Fudp.Messages
         public static T Decode<T>(Byte[] Data)
             where T : Message
         {
-            var res = Activator.CreateInstance<T>();
-            if (Data[0] != GetIdentifer<T>()) throw new Exceptions.FudpIdentiferMismatchException();
-            res.Decode(Data);
-            return res;
+            try
+            {
+                var res = Activator.CreateInstance<T>();
+                if (Data[0] != GetIdentifer<T>()) throw new FudpIdentiferMismatchException();
+                res.Decode(Data);
+                return res;
+            }
+            catch (Exception e)
+            {
+                throw new FudpDecodeException(Data, e);
+            }
         }
         public static Message DecodeMessage(Byte[] Data)
         {
             byte id = Data[0];
-            if (!Identifers.ContainsKey(id)) throw new Exceptions.FudpUnknownIdentiferException(id);
-            var res = (Message)Activator.CreateInstance(Identifers[id]);
-            res.Decode(Data);
-            return res;
+            if (!Identifers.ContainsKey(id))
+                throw new FudpUnknownIdentiferException(id);
+            try
+            {
+                var res = (Message)Activator.CreateInstance(Identifers[id]);
+                res.Decode(Data);
+                return res;
+            }
+            catch (Exception e)
+            {
+                throw new FudpDecodeException(Data, e);
+            }
         }
 
 

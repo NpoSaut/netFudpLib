@@ -58,6 +58,7 @@
     <Compile Include="Exceptions\CanProgTransportException.cs" />
     <Compile Include="Exceptions\CanProgUnCompatibleVersionException.cs" />
     <Compile Include="Exceptions\CanProgWriteException.cs" />
+    <Compile Include="Exceptions\FudpDecodeException.cs" />
     <Compile Include="Exceptions\FudpException.cs" />
     <Compile Include="Exceptions\FudpIdentiferMismatchException.cs" />
     <Compile Include="Exceptions\CanProgLimitConnectExcepion.cs" />
