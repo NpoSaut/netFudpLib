@@ -9,12 +9,15 @@ using Communications.Protocols.IsoTP;
 using Communications.Protocols.IsoTP.Exceptions;
 using Fudp.Messages;
 using Fudp.Exceptions;
+using NLog;
 
 namespace Fudp
 {
     /// <summary>Класс компанует, отправляет сообщение и получает ответ</summary>
     public class CanProg : IDisposable
     {
+        private static readonly ILogger _logger = LogManager.GetLogger("CanProg");
+
         private static readonly Dictionary<CanFlow, CanProg> ProgsOnFlows = new Dictionary<CanFlow, CanProg>();
 
         public event EventHandler<CanProgFilesystemEventArgs> FileCreated;
@@ -44,7 +47,6 @@ namespace Fudp
         protected Timer PingTimer { get; private set; }
 
         private bool _disposeFlowOnExit = false;
-        public static IList<ICanProgLog> Logs { get; set; }
 
         public enum CheckVersionResult
         {
@@ -88,7 +90,7 @@ namespace Fudp
         private Byte _pingCounter = 0;
         private void PingTimer_Callback(object State)
         {
-            Debug.Print("PING!");
+            _logger.Info("Ping");
             var pingMessage = new ProgPing(_pingCounter);
             var pongMessage = Request<ProgPong>(Flow, pingMessage, 200);
             //SendMsg(Flow, pingMessage, 200);
@@ -126,7 +128,7 @@ namespace Fudp
                 flow.Clear();
                 for (int attempt = 0; attempt < MaxAttempts; attempt ++)
                 {
-                    Logs.PushFormatTextEvent("--> {0}", msg);
+                    _logger.Debug("--> {0}", msg);
                     try
                     {
                         flow.Clear();
@@ -135,7 +137,7 @@ namespace Fudp
                     }
                     catch(IsoTpProtocolException istoProtocolException)
                     {
-                        Logs.PushFormatTextEvent("Исключение во время передачи: {0}", istoProtocolException.Message);
+                        _logger.Error(istoProtocolException, "Исключение во время передачи сообщения {0}", msg);
                         Thread.Sleep(100);
                         if (attempt >= MaxAttempts-1) throw new CanProgTransportException(istoProtocolException);
                     }
@@ -161,7 +163,7 @@ namespace Fudp
                     catch (FudpReceiveTimeoutException ex) { lastException = ex; }
                     Thread.Sleep(200);
                 }
-                Logs.PushFormatTextEvent("Исключение во время передачи: {0}", lastException);
+                _logger.Error(lastException, "Исключение во время запроса {0}", RequestMessage);
                 throw new CanProgTransportException(lastException);
             }
         }
@@ -184,7 +186,7 @@ namespace Fudp
                         if (typedMes != null)
                         {
 #if DEBUG
-                            Logs.PushFormatTextEvent("<-- {0}", typedMes);
+                            _logger.Debug("<-- {0}", typedMes);
 #endif
                             ResetPingTimer(flow);
                             return typedMes;
@@ -192,7 +194,7 @@ namespace Fudp
                         else
                         {
 #if DEBUG
-                            Logs.PushFormatTextEvent("<-- {0} - игнорируем (ожидали {1})", mes, typeof (TMessage));
+                            _logger.Warn("<-- {0} - игнорируем (ожидали {1})", mes, typeof (TMessage));
 #endif
                         }
                     }
@@ -219,32 +221,30 @@ namespace Fudp
         /// <returns></returns>
         public static CanProg Connect(CanFlow Flow, DeviceTicket device)
         {
-            Logs.PushFormatTextEvent("Пробуем подключиться к {0}", device);
+            _logger.Info("Пробуем подключиться к {0}", device);
             var res = new CanProg(Flow) { Device = device };
             int i = 0;
             while(true)
             {
-                Logs.PushFormatTextEvent("Попытка {0}", i+1);
+                _logger.Info("Попытка {0}", i+1);
                 if (i >= 10) throw new CanProgLimitConnectException("Превышен лимит попыток подключения");
                 
                 Flow.Clear();
 
-                Logs.PushFormatTextEvent("Отправляем ProgInit");
+                _logger.Info("Отправляем ProgInit");
                 SendMsg(Flow, new ProgInit(device), 100, WithTransmitDescriptor: FuInit);
                 i++;
                 try
                 {
-                    Logs.PushFormatTextEvent("Ждём ответа на ProgInit");
+                    _logger.Info("Ждём ответа на ProgInit");
                     var xxx = GetMsg<ProgStatus>(res.Flow, 100);
-                    Logs.PushFormatTextEvent("Получили ответ на ProgInit");
+                    _logger.Info("Получили ответ на ProgInit");
                     res.Properties = xxx.Properties;
                     res.ResetPingTimer();
 
-                    Debug.Print("PROPERTIES:");
-                    Debug.Indent();
+                    _logger.Debug("PROPERTIES:");
                     foreach (var property in res.Properties)
-                        Debug.Print("  {0} : {1}", property.Key, property.Value);
-                    Debug.Unindent();
+                        _logger.Debug("  {0} : {1}", property.Key, property.Value);
 
                     break;
                 }
