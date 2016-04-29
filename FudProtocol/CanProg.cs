@@ -112,7 +112,7 @@ namespace Fudp
         public DeviceTicket Device { get; private set; }
 
         const int DefaultMaximumSendAttempts = 7;
-        private const int DefaultFudpTimeout = 7000;
+        private const int DefaultFudpTimeout = 700;
 
         /// <summary>Отправляет сообщение</summary>
         /// <param name="flow">CAN-поток</param>
